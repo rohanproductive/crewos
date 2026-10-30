@@ -727,6 +727,20 @@
                                   const updatedTasks = project.tasks.map(t => t.id === task.id ? { ...t, column: t.column === 'done' ? 'in_progress' : 'done' } : t);
                                   const updatedProjects = db.projects.map(p => p.id === project.id ? { ...p, tasks: updatedTasks } : p);
                                   updateDb({ ...db, projects: updatedProjects });
+                                  if (supabase) {
+  supabase.from('tasks').insert([{
+    id: newTask.id,
+    project_id: project.id,
+    title: newTask.title,
+    column_name: newTask.column,
+    priority: newTask.priority,
+    assignee: newTask.assignee,
+    due_date: newTask.dueDate
+  }]).then(({ error }) => {
+    if (error) console.error('Supabase write error:', error);
+  });
+}
+
                                   showToast(`Updated task: ${task.title.substring(0, 24)}...`);
                                 }}
                                 className="p-3 rounded-xl bg-surface/80 border border-white/10 hover:border-aura-cyan/40 transition-all cursor-pointer group flex items-start gap-3"
