@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CrewOS — The Operating System for Teams on a Mission</title>
+  <title>CrewOS — Operating System for Temporary Teams</title>
   
-  <!-- Fonts: Newsreader (Editorial Display Serif) & Plus Jakarta Sans (Interface) -->
+  <!-- Modern Clean Typography: Inter & Geist-inspired System Stack -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -18,7 +18,7 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Lucide Icons & Supabase SDK -->
+  <!-- Lucide Icons & Supabase Client SDK -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -28,31 +28,18 @@
       theme: {
         extend: {
           fontFamily: {
-            display: ['Newsreader', 'Georgia', 'serif'],
-            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
           },
           colors: {
-            midnight: '#040714',
-            surface: {
-              DEFAULT: '#080E21',
-              elevated: '#0D1630',
-              glass: 'rgba(255, 255, 255, 0.04)',
-              glassBorder: 'rgba(255, 255, 255, 0.12)',
-            },
-            aura: {
-              blue: '#2563EB',
-              cyan: '#06B6D4',
-              sky: '#38BDF8',
-              coral: '#FF6B4A',
-              sunset: '#F97316',
-              peach: '#FDA4AF',
-              amber: '#F59E0B'
+            app: {
+              base: '#0B0F17',
+              panel: '#111622',
+              card: '#161C2C',
+              border: '#1E2638',
+              accent: '#3B82F6',
+              accentHover: '#2563EB',
+              textMuted: '#8492A6'
             }
-          },
-          boxShadow: {
-            'glow-cyan': '0 0 35px -5px rgba(6, 182, 212, 0.35)',
-            'glow-coral': '0 0 45px -8px rgba(255, 107, 74, 0.4)',
-            'glass': '0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12)'
           }
         }
       }
@@ -60,31 +47,11 @@
   </script>
 
   <style>
-    /* Fluted glass vertical streak overlay matching reference images */
-    .fluted-overlay {
-      background-image: repeating-linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0.015) 0px,
-        rgba(255, 255, 255, 0.015) 1px,
-        transparent 1px,
-        transparent 16px
-      );
-    }
-    
-    /* Ethereal backdrop aura bloom */
-    .aurora-bloom {
-      background: 
-        radial-gradient(circle at 50% 65%, rgba(255, 107, 74, 0.28) 0%, rgba(249, 115, 22, 0.15) 24%, transparent 55%),
-        radial-gradient(circle at 20% 30%, rgba(37, 99, 235, 0.35) 0%, transparent 50%),
-        radial-gradient(circle at 80% 25%, rgba(6, 182, 212, 0.32) 0%, transparent 45%),
-        radial-gradient(circle at 50% -10%, rgba(59, 130, 246, 0.25) 0%, transparent 60%),
-        #040714;
-    }
-
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #040714; }
-    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 999px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.28); }
+    /* Clean custom scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #0B0F17; }
+    ::-webkit-scrollbar-thumb { background: #1E2638; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #2E384D; }
 
     @media print {
       body { background: #ffffff !important; color: #111827 !important; }
@@ -94,13 +61,13 @@
   </style>
 </head>
 
-<body class="bg-midnight text-slate-100 font-sans antialiased selection:bg-aura-cyan/30 selection:text-white min-h-screen overflow-x-hidden">
+<body class="bg-app-base text-slate-100 font-sans antialiased selection:bg-blue-600/30 selection:text-white min-h-screen">
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useMemo, useRef } = React;
+    const { useState, useEffect, useMemo } = React;
 
-    // --- CONFIGURED SUPABASE CLOUD BACKEND ---
+    // --- SUPABASE CLIENT CONFIGURATION ---
     const SUPABASE_URL = 'https://rcnnuvhwzfbntkkizaai.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjbm51dmh3emZibnRra2l6YWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzNzk1NDYsImV4cCI6MjEwODk1NTU0Nn0.4yTn-ZKE0cTd10MnjVtZnhtGqis2a7B65XQ0WCbbJdo';
     
@@ -108,174 +75,87 @@
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
       : null;
 
-    const STORAGE_KEY = 'crewos_db_v2';
+    const STORAGE_KEY = 'crewos_db_v3';
 
-    const INITIAL_DATA = {
-      user: {
-        id: 'usr-guest',
-        name: 'Jordan Rivera',
-        email: 'jordan@crewos.local',
-        role: 'Crew Director',
-        avatar: 'JR'
-      },
-      currency: 'INR',
-      currencySymbol: '₹',
-      projects: [
-        {
-          id: 'proj-atlas',
-          name: 'Launch Project Atlas',
-          tagline: 'Autonomous localized delivery drone network pilot.',
-          category: 'Startup Launch',
-          status: 'Active',
-          startDate: '2026-10-15',
-          targetDate: '2026-12-20',
-          totalBudget: 450000,
-          progress: 68,
-          members: [
-            { id: 'm-1', name: 'Jordan Rivera', role: 'Owner', title: 'Founder & Tech', avatar: 'JR', email: 'jordan@crewos.local' },
-            { id: 'm-2', name: 'Maya Chen', role: 'Admin', title: 'Lead Product Design', avatar: 'MC', email: 'maya@design.co' },
-            { id: 'm-3', name: 'Ethan Vance', role: 'Member', title: 'Avionics Firmware', avatar: 'EV', email: 'ethan@avionics.dev' }
-          ],
-          tasks: [
-            { id: 't-1', title: 'Design FAA Part 107 safety test protocols', column: 'done', priority: 'high', assignee: 'Maya Chen', dueDate: '2026-10-24' },
-            { id: 't-2', title: 'Calibrate optical flow sensors on Mark-IV payload', column: 'done', priority: 'urgent', assignee: 'Ethan Vance', dueDate: '2026-10-28' },
-            { id: 't-3', title: 'Finalize brand guidelines & landing page assets', column: 'in_progress', priority: 'medium', assignee: 'Maya Chen', dueDate: '2026-11-04' },
-            { id: 't-4', title: 'Pilot flight permit submission to Civil Aviation Dept', column: 'review', priority: 'urgent', assignee: 'Jordan Rivera', dueDate: '2026-11-02' },
-            { id: 't-5', title: 'Setup telemetry telemetry ingestion pipeline', column: 'todo', priority: 'high', assignee: 'Jordan Rivera', dueDate: '2026-11-08' }
-          ],
-          decisions: [
-            {
-              id: 'dec-1',
-              title: 'Adopt Cellular LTE fallback alongside 915MHz LoRa telemetry',
-              context: 'In dense suburban test sites, LoRa radio packets experienced line-of-sight signal drops.',
-              chosen: 'Dual-redundant eSIM multi-carrier telemetry with auto-handover to LoRa as cold fallback.',
-              rationale: 'LTE provides 50ms roundtrip latency for live high-definition video during compliance maneuvers.',
-              status: 'Approved',
-              owner: 'Ethan Vance',
-              approvedBy: 'Jordan Rivera',
-              date: '2026-10-22'
-            }
-          ],
-          expenses: [
-            { id: 'exp-1', title: 'Mark-IV Carbon Fiber Airframe Spares', category: 'Hardware', amount: 84000, date: '2026-10-18', payer: 'Ethan Vance', status: 'Paid' },
-            { id: 'exp-2', title: 'Civil Drone Third-Party Liability Insurance', category: 'Legal & Compliance', amount: 125000, date: '2026-10-20', payer: 'Jordan Rivera', status: 'Paid' },
-            { id: 'exp-3', title: 'eSIM IoT Data Subscriptions (6-Month Pooling)', category: 'Infrastructure', amount: 18500, date: '2026-10-25', payer: 'Jordan Rivera', status: 'Paid' }
-          ],
-          resources: [
-            { id: 'res-1', title: 'Figma System & Telemetry HUD Tokens', url: 'https://figma.com/@crewos/atlas', type: 'Design', author: 'Maya Chen', date: '2026-10-17' },
-            { id: 'res-2', title: 'Firmware Repositories & Flight Controllers', url: 'https://github.com/atlas-aerospace/flight-core', type: 'Code', author: 'Ethan Vance', date: '2026-10-19' }
-          ],
-          activity: [
-            { id: 'act-1', actor: 'Ethan Vance', action: 'completed task', target: 'Calibrate optical flow sensors', time: '4 hours ago' }
-          ],
-          recap: null
-        }
-      ]
-    };
-
-    function loadDB() {
+    function loadCachedDB() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) return JSON.parse(raw);
       } catch (e) {}
-      return INITIAL_DATA;
+      return { currency: 'INR', currencySymbol: '₹', projects: [] };
     }
 
-    function saveDB(data) {
+    function saveCachedDB(data) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       } catch (e) {}
     }
 
     function CrewOSApp() {
-      const [db, setDb] = useState(loadDB);
-      const [view, setView] = useState('landing');
-      const [activeProjectId, setActiveProjectId] = useState('proj-atlas');
+      const [db, setDb] = useState(loadCachedDB);
+      const [view, setView] = useState('landing'); // 'landing' | 'dashboard' | 'project' | 'new-project'
+      const [activeProjectId, setActiveProjectId] = useState(null);
       const [activeProjectTab, setActiveProjectTab] = useState('overview');
       const [isAIModalOpen, setIsAIModalOpen] = useState(false);
       const [aiMode, setAiMode] = useState('plan');
-      const [taskViewMode, setTaskViewMode] = useState('kanban');
-      const [taskFilterAssignee, setTaskFilterAssignee] = useState('all');
-      const [taskSearch, setTaskSearch] = useState('');
       const [inviteModalOpen, setInviteModalOpen] = useState(false);
-      const [inviteCopied, setInviteCopied] = useState(false);
       const [toast, setToast] = useState(null);
 
       // --- AUTHENTICATION STATE ---
       const [authUser, setAuthUser] = useState(null);
       const [authModalOpen, setAuthModalOpen] = useState(false);
-      const [authMode, setAuthMode] = useState('signin');
+      const [authMode, setAuthMode] = useState('signin'); // 'signin' or 'signup'
       const [authEmail, setAuthEmail] = useState('');
       const [authPassword, setAuthPassword] = useState('');
       const [authLoading, setAuthLoading] = useState(false);
+      const [authErrorMessage, setAuthErrorMessage] = useState('');
 
       const showToast = (message) => {
         setToast(message);
-        setTimeout(() => setToast(null), 3200);
+        setTimeout(() => setToast(null), 3000);
       };
 
       const updateDb = (newDb) => {
         setDb(newDb);
-        saveDB(newDb);
+        saveCachedDB(newDb);
       };
 
-      // Lucide icon dynamic reload
+      // Lucide icon refresh
       useEffect(() => {
         if (window.lucide) {
           window.lucide.createIcons();
         }
       });
 
-      // --- SUPABASE AUTH SESSION LISTENER ---
+      // --- SUPABASE SESSION LISTENER ---
       useEffect(() => {
         if (!supabase) return;
 
         supabase.auth.getSession().then(({ data: { session } }) => {
           if (session?.user) {
             setAuthUser(session.user);
-            const userEmail = session.user.email || 'user@crewos.local';
-            const userName = session.user.user_metadata?.full_name || userEmail.split('@')[0];
-            setDb(prev => ({
-              ...prev,
-              user: {
-                id: session.user.id,
-                email: userEmail,
-                name: userName,
-                role: 'Mission Commander',
-                avatar: userName.substring(0, 2).toUpperCase()
-              }
-            }));
           }
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
           if (session?.user) {
             setAuthUser(session.user);
-            const userEmail = session.user.email || 'user@crewos.local';
-            const userName = session.user.user_metadata?.full_name || userEmail.split('@')[0];
-            setDb(prev => ({
-              ...prev,
-              user: {
-                id: session.user.id,
-                email: userEmail,
-                name: userName,
-                role: 'Mission Commander',
-                avatar: userName.substring(0, 2).toUpperCase()
-              }
-            }));
+            setAuthModalOpen(false);
+            if (view === 'landing') setView('dashboard');
           } else {
             setAuthUser(null);
+            setView('landing');
           }
         });
 
         return () => subscription.unsubscribe();
-      }, []);
+      }, [view]);
 
-      // --- LOAD DATA FROM SUPABASE POSTGRESQL ---
+      // --- LOAD REMOTE DATA (ONLY FOR LOGGED-IN USERS) ---
       useEffect(() => {
-        if (!supabase) return;
+        if (!supabase || !authUser) return;
 
-        async function fetchRemoteData() {
+        async function fetchUserData() {
           try {
             const { data: remoteProjects, error } = await supabase
               .from('projects')
@@ -286,7 +166,7 @@
               return;
             }
 
-            if (remoteProjects && remoteProjects.length > 0) {
+            if (remoteProjects) {
               const formatted = remoteProjects.map(p => ({
                 id: p.id,
                 name: p.name,
@@ -298,7 +178,13 @@
                 totalBudget: Number(p.total_budget || 0),
                 progress: p.progress || 0,
                 members: [
-                  { id: 'm-101', name: db.user.name, role: 'Owner', title: 'Commander', avatar: db.user.avatar, email: db.user.email }
+                  { 
+                    id: authUser.id, 
+                    name: authUser.user_metadata?.full_name || authUser.email.split('@')[0], 
+                    role: 'Owner', 
+                    title: 'Lead', 
+                    email: authUser.email 
+                  }
                 ],
                 tasks: (p.tasks || []).map(t => ({
                   id: t.id,
@@ -306,8 +192,7 @@
                   column: t.column_name,
                   priority: t.priority,
                   assignee: t.assignee,
-                  dueDate: t.due_date,
-                  checklist: []
+                  dueDate: t.due_date
                 })),
                 decisions: (p.decisions || []).map(d => ({
                   ...d,
@@ -319,47 +204,79 @@
               }));
 
               setDb(prev => ({ ...prev, projects: formatted }));
-              showToast('Synced live from Supabase Cloud ✓');
+              if (formatted.length > 0 && !activeProjectId) {
+                setActiveProjectId(formatted[0].id);
+              }
             }
           } catch (err) {
-            console.error('Supabase connection error:', err);
+            console.error('Data retrieval failed:', err);
           }
         }
 
-        fetchRemoteData();
+        fetchUserData();
       }, [authUser]);
 
-      // --- AUTH ACTIONS ---
-      const handleAuthSubmit = async (e) => {
+      // --- AUTH METHODS ---
+      const handleEmailAuth = async (e) => {
         e.preventDefault();
         if (!supabase) {
-          showToast('Supabase client not initialized.');
+          setAuthErrorMessage('Supabase client is not ready.');
           return;
         }
         setAuthLoading(true);
+        setAuthErrorMessage('');
 
         try {
           if (authMode === 'signup') {
-            const { error } = await supabase.auth.signUp({
+            const { data, error } = await supabase.auth.signUp({
               email: authEmail,
               password: authPassword,
-              options: { data: { full_name: authEmail.split('@')[0] } }
+              options: {
+                data: {
+                  full_name: authEmail.split('@')[0]
+                }
+              }
             });
             if (error) throw error;
-            showToast('Account created successfully!');
-            setAuthModalOpen(false);
+            if (data?.session) {
+              showToast('Account created and logged in.');
+              setAuthModalOpen(false);
+              setView('dashboard');
+            } else {
+              showToast('Check your email for confirmation, or disable "Confirm email" in Supabase settings.');
+            }
           } else {
             const { data, error } = await supabase.auth.signInWithPassword({
               email: authEmail,
               password: authPassword
             });
             if (error) throw error;
-            showToast(`Welcome back, ${data.user.email.split('@')[0]}!`);
+            showToast('Signed in successfully.');
             setAuthModalOpen(false);
+            setView('dashboard');
           }
         } catch (err) {
-          showToast(err.message || 'Authentication failed');
+          setAuthErrorMessage(err.message || 'Authentication failed. Please verify credentials.');
         } finally {
+          setAuthLoading(false);
+        }
+      };
+
+      const handleGoogleAuth = async () => {
+        if (!supabase) return;
+        setAuthLoading(true);
+        setAuthErrorMessage('');
+
+        try {
+          const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: window.location.origin
+            }
+          });
+          if (error) throw error;
+        } catch (err) {
+          setAuthErrorMessage(err.message || 'Google sign-in error.');
           setAuthLoading(false);
         }
       };
@@ -368,19 +285,19 @@
         if (!supabase) return;
         await supabase.auth.signOut();
         setAuthUser(null);
-        showToast('Signed out successfully');
+        setView('landing');
+        showToast('Signed out.');
       };
 
-      // Active project selector
+      // Current active project
       const project = useMemo(() => {
-        return db.projects.find(p => p.id === activeProjectId) || db.projects[0];
+        return db.projects.find(p => p.id === activeProjectId) || db.projects[0] || null;
       }, [db.projects, activeProjectId]);
 
-      // Metrics computations
       const budgetMetrics = useMemo(() => {
-        if (!project) return { spent: 0, planned: 0, remaining: 0, percent: 0, byCat: {} };
-        const spent = project.expenses.filter(e => e.status === 'Paid').reduce((acc, curr) => acc + curr.amount, 0);
-        const planned = project.expenses.filter(e => e.status === 'Planned').reduce((acc, curr) => acc + curr.amount, 0);
+        if (!project) return { spent: 0, planned: 0, remaining: 0, percent: 0 };
+        const spent = project.expenses.filter(e => e.status === 'Paid').reduce((acc, c) => acc + c.amount, 0);
+        const planned = project.expenses.filter(e => e.status === 'Planned').reduce((acc, c) => acc + c.amount, 0);
         const remaining = Math.max(0, project.totalBudget - spent);
         const percent = project.totalBudget > 0 ? Math.round((spent / project.totalBudget) * 100) : 0;
         return { spent, planned, remaining, percent };
@@ -391,151 +308,253 @@
         const total = project.tasks.length;
         const done = project.tasks.filter(t => t.column === 'done').length;
         const urgent = project.tasks.filter(t => t.priority === 'urgent' && t.column !== 'done').length;
-        const progress = Math.round((done / total) * 100);
-        return { total, done, progress, urgent };
+        return { total, done, progress: Math.round((done / total) * 100), urgent };
       }, [project]);
 
       const formatCurrency = (amt) => `${db.currencySymbol || '₹'}${Number(amt).toLocaleString()}`;
 
-      return (
-        <div className="relative min-h-screen bg-midnight text-slate-100 selection:bg-cyan-500/30 overflow-x-hidden">
-          {/* Fluted Vertical Glass Streak Overlay */}
-          <div className="fixed inset-0 fluted-overlay pointer-events-none z-10 opacity-70"></div>
+      // Enforce auth gate for internal views
+      const requireAuth = (targetView) => {
+        if (!authUser) {
+          setAuthMode('signin');
+          setAuthModalOpen(true);
+        } else {
+          setView(targetView);
+        }
+      };
 
-          {/* Floating Toast Alerts */}
+      return (
+        <div className="min-h-screen bg-app-base text-slate-100 flex flex-col font-sans">
+          
+          {/* Notifications */}
           {toast && (
-            <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl bg-surface-elevated/95 border border-white/20 text-white shadow-glass backdrop-blur-xl animate-bounce">
-              <span className="w-2.5 h-2.5 rounded-full bg-aura-cyan shadow-[0_0_10px_#06b6d4]"></span>
-              <span className="text-sm font-medium">{toast}</span>
+            <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-app-card border border-app-border text-sm text-slate-200 shadow-xl">
+              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+              <span>{toast}</span>
             </div>
           )}
 
-          {/* Top Floating Glass Navigation */}
-          <header className="sticky top-0 z-40 w-full px-4 sm:px-8 py-3.5 backdrop-blur-2xl bg-midnight/65 border-b border-white/[0.08] transition-all">
-            <div className="max-w-7xl mx-auto flex items-center justify-between">
+          {/* Clean, Professional Top Navigation Bar */}
+          <header className="sticky top-0 z-40 w-full border-b border-app-border bg-app-base/90 backdrop-blur-md">
+            <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
               
               {/* Brand Logo */}
-              <div onClick={() => setView('landing')} className="flex items-center gap-3.5 cursor-pointer group">
-                <div className="relative w-9 h-9 rounded-2xl bg-gradient-to-tr from-aura-blue via-aura-cyan to-aura-coral p-[1px] shadow-glow-cyan transition-transform group-hover:scale-105">
-                  <div className="w-full h-full bg-midnight rounded-2xl flex items-center justify-center font-bold text-aura-sky">⌘</div>
+              <div 
+                onClick={() => setView(authUser ? 'dashboard' : 'landing')} 
+                className="flex items-center gap-2.5 cursor-pointer font-semibold text-slate-100 tracking-tight text-sm"
+              >
+                <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
+                  C
                 </div>
-                <div>
-                  <span className="text-xl font-bold tracking-tight text-white flex items-center gap-1.5 font-sans">
-                    CrewOS <span className="text-xs px-2 py-0.5 rounded-full bg-aura-cyan/15 text-aura-cyan border border-aura-cyan/30 font-mono tracking-normal">2.4</span>
-                  </span>
-                </div>
+                <span>CrewOS</span>
               </div>
 
-              {/* Center Menu Pills */}
-              <nav className="hidden md:flex items-center gap-1 px-4 py-1.5 rounded-full bg-surface-glass border border-white/[0.1] backdrop-blur-xl shadow-glass text-sm">
-                <button onClick={() => setView('landing')} className={`px-3.5 py-1 rounded-full transition-all ${view === 'landing' ? 'bg-white/10 text-white font-medium' : 'text-slate-400 hover:text-white'}`}>Home</button>
-                <button onClick={() => setView('dashboard')} className={`px-3.5 py-1 rounded-full transition-all ${view === 'dashboard' ? 'bg-white/10 text-white font-medium' : 'text-slate-400 hover:text-white'}`}>Dashboard</button>
-                <button onClick={() => { setView('project'); setActiveProjectTab('tasks'); }} className={`px-3.5 py-1 rounded-full transition-all ${view === 'project' ? 'bg-white/10 text-white font-medium' : 'text-slate-400 hover:text-white'}`}>Workspace</button>
-                <button onClick={() => setIsAIModalOpen(true)} className="px-3.5 py-1 rounded-full text-aura-coral hover:text-white transition-all flex items-center gap-1.5">⚡ AI Planner</button>
-              </nav>
+              {/* Navigation Links: Visible only when logged in */}
+              {authUser ? (
+                <nav className="flex items-center gap-6 text-xs font-medium text-slate-400">
+                  <button 
+                    onClick={() => setView('dashboard')} 
+                    className={`transition-colors hover:text-slate-100 ${view === 'dashboard' ? 'text-slate-100 font-semibold' : ''}`}
+                  >
+                    Dashboard
+                  </button>
+                  <button 
+                    onClick={() => {
+                      if (!project && db.projects.length === 0) {
+                        setView('new-project');
+                      } else {
+                        setView('project');
+                      }
+                    }} 
+                    className={`transition-colors hover:text-slate-100 ${view === 'project' ? 'text-slate-100 font-semibold' : ''}`}
+                  >
+                    Workspace
+                  </button>
+                  <button 
+                    onClick={() => setIsAIModalOpen(true)} 
+                    className="text-blue-400 hover:text-blue-300 transition-colors"
+                  >
+                    AI Planner
+                  </button>
+                </nav>
+              ) : (
+                <div className="hidden sm:block text-xs text-slate-500 font-mono">
+                  Temporary Team Infrastructure
+                </div>
+              )}
 
-              {/* Right User Bar / Auth Trigger */}
+              {/* Action Buttons */}
               <div className="flex items-center gap-3">
                 {authUser ? (
-                  <div className="flex items-center gap-2.5">
-                    <button onClick={() => setView('new-project')} className="px-3.5 py-1.5 rounded-full bg-aura-blue/20 hover:bg-aura-blue/30 border border-aura-blue/40 text-xs font-semibold text-aura-sky transition-all flex items-center gap-1.5">+ New Mission</button>
-                    <div title={`Logged in as ${authUser.email}`} className="w-8 h-8 rounded-full bg-gradient-to-tr from-aura-coral to-aura-cyan flex items-center justify-center font-bold text-xs text-midnight shadow-glow-coral">
-                      {db.user.avatar}
-                    </div>
-                    <button onClick={handleSignOut} className="text-xs text-slate-400 hover:text-white px-2 py-1">Sign Out</button>
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={() => setView('new-project')}
+                      className="px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-xs font-medium text-white transition-colors"
+                    >
+                      New Mission
+                    </button>
+                    <span className="text-xs text-slate-400 font-mono hidden md:inline">
+                      {authUser.email}
+                    </span>
+                    <button 
+                      onClick={handleSignOut}
+                      className="text-xs text-slate-400 hover:text-slate-200 border-l border-app-border pl-3 py-1"
+                    >
+                      Sign Out
+                    </button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <button onClick={() => { setAuthMode('signin'); setAuthModalOpen(true); }} className="px-4 py-1.5 rounded-full text-xs font-semibold text-slate-300 hover:text-white transition-all">Sign In</button>
-                    <button onClick={() => { setAuthMode('signup'); setAuthModalOpen(true); }} className="px-4 py-1.5 rounded-full text-xs font-bold text-white bg-gradient-to-r from-aura-blue to-aura-cyan shadow-glow-cyan hover:scale-105 transition-all">Get Started</button>
+                    <button 
+                      onClick={() => { setAuthMode('signin'); setAuthModalOpen(true); }}
+                      className="px-3 py-1.5 rounded-md text-xs font-medium text-slate-300 hover:text-white transition-colors"
+                    >
+                      Sign In
+                    </button>
+                    <button 
+                      onClick={() => { setAuthMode('signup'); setAuthModalOpen(true); }}
+                      className="px-3.5 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-xs font-medium text-white transition-colors"
+                    >
+                      Get Started
+                    </button>
                   </div>
                 )}
               </div>
             </div>
           </header>
 
-          {/* VIEW: MARKETING LANDING PAGE */}
+          {/* ========================================================
+              VIEW 1: CLEAN PROFESSIONAL MARKETING LANDING PAGE
+              (All repetitive feature cards removed)
+             ======================================================== */}
           {view === 'landing' && (
-            <main className="relative">
-              <section className="relative min-h-[92vh] flex flex-col justify-center items-center px-4 sm:px-6 pt-12 pb-24 aurora-bloom overflow-hidden text-center">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.05] border border-white/15 backdrop-blur-xl text-xs font-semibold uppercase text-slate-300 mb-8 shadow-glass">
-                  <span className="w-2 h-2 rounded-full bg-aura-cyan shadow-[0_0_8px_#06b6d4]"></span>
-                  The Operating System for Teams on a Mission
+            <main className="flex-1 flex flex-col justify-center max-w-4xl mx-auto px-6 py-20 text-center">
+              
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-app-border bg-app-panel text-xs text-slate-400 mx-auto mb-8 font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                The Operating System for Teams on a Mission
+              </div>
+
+              <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-white max-w-2xl mx-auto leading-tight mb-6">
+                Organize, execute, and deliver your next mission.
+              </h1>
+
+              <p className="text-slate-400 text-base sm:text-lg max-w-xl mx-auto leading-relaxed mb-10">
+                A shared workspace for temporary squads, hackathons, and sprint crews. Manage tasks, record critical decisions, and audit expenses without fragmented chat threads.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
+                <button 
+                  onClick={() => requireAuth('dashboard')}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 transition-colors shadow-sm"
+                >
+                  Start a crew workspace →
+                </button>
+                <button 
+                  onClick={() => { setAuthMode('signin'); setAuthModalOpen(true); }}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-md text-sm font-medium text-slate-300 bg-app-panel border border-app-border hover:bg-app-card transition-colors"
+                >
+                  Sign In to existing mission
+                </button>
+              </div>
+
+              {/* Minimal Three-Pillar Overview */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left border-t border-app-border pt-12">
+                <div className="p-5 rounded-lg border border-app-border bg-app-panel/50">
+                  <div className="text-xs font-mono text-blue-400 mb-1">01 / COORDINATION</div>
+                  <h3 className="text-sm font-semibold text-white mb-1.5">Actionable Task Kanban</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">Direct sprint boards with deadline assignment and ownership tracking for rapid execution.</p>
                 </div>
-
-                <div className="max-w-4xl mx-auto px-4">
-                  <h1 className="font-display italic text-5xl sm:text-7xl lg:text-8xl text-white font-normal leading-[1.08] mb-6">
-                    Great things don’t <br className="hidden sm:inline" />
-                    <span className="font-sans not-italic font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-slate-400">happen alone.</span>
-                  </h1>
-
-                  <p className="max-w-2xl mx-auto text-base sm:text-xl text-slate-300 font-light mb-10 leading-relaxed">
-                    One high-fidelity space for your crew, your decisions, budgets, and milestones. Built for teams that assemble to launch something extraordinary.
-                  </p>
-
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mb-8">
-                    <button onClick={() => setView('dashboard')} className="w-full sm:w-auto px-8 py-3.5 rounded-full font-semibold text-white bg-gradient-to-r from-aura-blue via-aura-cyan to-aura-coral shadow-glow-cyan hover:scale-[1.02] transition-all">Start a crew workspace ↗</button>
-                    <button onClick={() => { setActiveProjectId('proj-atlas'); setView('project'); }} className="w-full sm:w-auto px-8 py-3.5 rounded-full font-medium text-slate-200 bg-white/[0.04] border border-white/15 backdrop-blur-xl hover:bg-white/[0.08] transition-all">Explore live demo</button>
-                  </div>
+                <div className="p-5 rounded-lg border border-app-border bg-app-panel/50">
+                  <div className="text-xs font-mono text-blue-400 mb-1">02 / GOVERNANCE</div>
+                  <h3 className="text-sm font-semibold text-white mb-1.5">Signed Decision Ledger</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">Lock agreed technical, architectural, and resource decisions so context is never lost in chat.</p>
                 </div>
-
-                {/* Floating Metric Badges */}
-                <div className="w-full max-w-6xl mx-auto mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 px-4 z-20">
-                  <div className="p-4 rounded-3xl bg-surface-glass border border-white/10 backdrop-blur-2xl text-center shadow-glass">
-                    <div className="text-2xl sm:text-3xl font-bold text-white font-display">100%</div>
-                    <div className="text-xs text-slate-400 mt-1 uppercase">Decision Traceability</div>
-                  </div>
-                  <div className="p-4 rounded-3xl bg-surface-glass border border-white/10 backdrop-blur-2xl text-center shadow-glass">
-                    <div className="text-2xl sm:text-3xl font-bold text-aura-sky font-display">₹ / $ / €</div>
-                    <div className="text-xs text-slate-400 mt-1 uppercase">Multi-currency Ledger</div>
-                  </div>
-                  <div className="p-4 rounded-3xl bg-surface-glass border border-white/10 backdrop-blur-2xl text-center shadow-glass">
-                    <div className="text-2xl sm:text-3xl font-bold text-aura-coral font-display">&lt; 3 Min</div>
-                    <div className="text-xs text-slate-400 mt-1 uppercase">AI Sprint Breakdown</div>
-                  </div>
-                  <div className="p-4 rounded-3xl bg-surface-glass border border-white/10 backdrop-blur-2xl text-center shadow-glass">
-                    <div className="text-2xl sm:text-3xl font-bold text-white font-display">1-Click</div>
-                    <div className="text-xs text-slate-400 mt-1 uppercase">Handover Export</div>
-                  </div>
+                <div className="p-5 rounded-lg border border-app-border bg-app-panel/50">
+                  <div className="text-xs font-mono text-blue-400 mb-1">03 / HANDOVER</div>
+                  <h3 className="text-sm font-semibold text-white mb-1.5">Reconciliation & Export</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">Track expenses in real time and generate a clean final project handover dossier on completion.</p>
                 </div>
-              </section>
+              </div>
             </main>
           )}
 
-          {/* VIEW: MAIN DASHBOARD */}
-          {view === 'dashboard' && (
-            <main className="max-w-7xl mx-auto px-4 sm:px-8 py-8 animate-fade-in">
-              <div className="flex flex-col md:flex-row md:items-center justify-between pb-8 border-b border-white/10 gap-4">
+          {/* ========================================================
+              VIEW 2: MAIN DASHBOARD (AUTHENTICATED ONLY)
+             ======================================================== */}
+          {view === 'dashboard' && authUser && (
+            <main className="max-w-6xl mx-auto px-6 py-8 flex-1 w-full">
+              <div className="flex items-center justify-between pb-6 border-b border-app-border mb-8">
                 <div>
-                  <h1 className="text-3xl sm:text-4xl font-bold text-white">Mission Command</h1>
-                  <p className="text-sm text-slate-400 mt-1">Logged in as {db.user.name} ({authUser ? authUser.email : 'Guest Session'})</p>
+                  <h1 className="text-xl font-bold text-white tracking-tight">Active Missions</h1>
+                  <p className="text-xs text-slate-400 mt-1">Select a workspace or launch a new initiative.</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <button onClick={() => setIsAIModalOpen(true)} className="px-4 py-2.5 rounded-full bg-white/[0.04] border border-white/15 text-xs font-semibold text-aura-coral flex items-center gap-2">⚡ AI Breakdown</button>
-                  <button onClick={() => setView('new-project')} className="px-5 py-2.5 rounded-full bg-gradient-to-r from-aura-blue to-aura-cyan text-xs font-bold text-white shadow-glow-cyan">+ Create Project</button>
-                </div>
+                <button 
+                  onClick={() => setView('new-project')}
+                  className="px-3.5 py-2 rounded-md bg-blue-600 hover:bg-blue-500 text-xs font-medium text-white transition-colors"
+                >
+                  + New Mission
+                </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-                {db.projects.map(proj => (
-                  <div key={proj.id} onClick={() => { setActiveProjectId(proj.id); setView('project'); }} className="p-6 rounded-3xl bg-surface-glass border border-white/10 hover:border-aura-cyan/50 backdrop-blur-2xl transition-all cursor-pointer shadow-glass">
-                    <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full bg-aura-blue/20 text-aura-sky font-semibold">{proj.category}</span>
-                    <h3 className="text-xl font-bold text-white mt-2">{proj.name}</h3>
-                    <p className="text-xs text-slate-300 mt-1">{proj.tagline}</p>
-                    <div className="mt-6 flex justify-between text-xs font-mono text-slate-400">
-                      <span>Target: {proj.targetDate}</span>
-                      <span className="text-aura-cyan font-bold">{proj.tasks.length} tasks</span>
+              {db.projects.length === 0 ? (
+                <div className="p-12 text-center border border-dashed border-app-border rounded-lg bg-app-panel/30">
+                  <h3 className="text-sm font-semibold text-white mb-1">No active missions</h3>
+                  <p className="text-xs text-slate-400 mb-4">You have not created or joined any project workspaces yet.</p>
+                  <button 
+                    onClick={() => setView('new-project')}
+                    className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-500 text-xs font-medium text-white"
+                  >
+                    Launch Your First Workspace
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {db.projects.map(proj => (
+                    <div 
+                      key={proj.id}
+                      onClick={() => { setActiveProjectId(proj.id); setView('project'); }}
+                      className="p-5 rounded-lg border border-app-border bg-app-panel hover:border-slate-600 transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-app-card border border-app-border text-slate-300">
+                            {proj.category}
+                          </span>
+                          <h3 className="text-base font-semibold text-white mt-2">{proj.name}</h3>
+                          <p className="text-xs text-slate-400 mt-1 line-clamp-1">{proj.tagline}</p>
+                        </div>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                          {proj.status}
+                        </span>
+                      </div>
+                      <div className="mt-6 pt-4 border-t border-app-border flex items-center justify-between text-xs text-slate-400 font-mono">
+                        <span>Due: {proj.targetDate}</span>
+                        <span>{proj.tasks.length} tasks recorded</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </main>
           )}
 
-          {/* VIEW: CREATE PROJECT WIZARD */}
-          {view === 'new-project' && (
-            <main className="max-w-2xl mx-auto px-4 py-10 animate-fade-in">
-              <h1 className="text-3xl font-bold text-white mb-6">New Mission Workspace</h1>
+          {/* ========================================================
+              VIEW 3: CREATE PROJECT WIZARD
+             ======================================================== */}
+          {view === 'new-project' && authUser && (
+            <main className="max-w-xl mx-auto px-6 py-12 flex-1 w-full">
+              <div className="mb-6">
+                <button 
+                  onClick={() => setView('dashboard')}
+                  className="text-xs text-slate-400 hover:text-white mb-2 block"
+                >
+                  ← Back to dashboard
+                </button>
+                <h1 className="text-xl font-bold text-white tracking-tight">Create Workspace</h1>
+                <p className="text-xs text-slate-400 mt-1">Configure parameters for your temporary team squad.</p>
+              </div>
+
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 const form = e.target;
@@ -549,7 +568,7 @@
                   targetDate: form.projTargetDate.value,
                   totalBudget: Number(form.projBudget.value) || 100000,
                   progress: 0,
-                  members: [{ id: 'm-1', name: db.user.name, role: 'Owner', title: 'Lead', avatar: db.user.avatar, email: db.user.email }],
+                  members: [{ id: authUser.id, name: authUser.email.split('@')[0], role: 'Owner', title: 'Lead', email: authUser.email }],
                   tasks: [],
                   decisions: [],
                   expenses: [],
@@ -574,59 +593,73 @@
                     progress: newProj.progress
                   }]);
                 }
-                showToast(`Mission workspace initialized: ${newProj.name}`);
-              }} className="space-y-4 p-8 rounded-3xl bg-surface-glass border border-white/10 shadow-glass">
+                showToast(`Workspace initialized: ${newProj.name}`);
+              }} className="p-6 rounded-lg border border-app-border bg-app-panel space-y-4">
                 <div>
-                  <label className="text-xs uppercase text-slate-400 block mb-1">Project Name</label>
-                  <input name="projName" required defaultValue="Project Odyssey" className="w-full px-4 py-2.5 rounded-xl bg-midnight border border-white/15 text-white outline-none focus:border-aura-cyan" />
+                  <label className="text-xs font-medium text-slate-300 block mb-1">Project Name</label>
+                  <input name="projName" required placeholder="Launch Project Atlas" className="w-full px-3 py-2 rounded-md bg-app-base border border-app-border text-xs text-white outline-none focus:border-blue-500" />
                 </div>
                 <div>
-                  <label className="text-xs uppercase text-slate-400 block mb-1">Tagline</label>
-                  <input name="projTagline" required defaultValue="Decentralized squad execution." className="w-full px-4 py-2.5 rounded-xl bg-midnight border border-white/15 text-white outline-none focus:border-aura-cyan" />
+                  <label className="text-xs font-medium text-slate-300 block mb-1">Mission Objective</label>
+                  <input name="projTagline" required placeholder="Autonomous delivery network pilot" className="w-full px-3 py-2 rounded-md bg-app-base border border-app-border text-xs text-white outline-none focus:border-blue-500" />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs uppercase text-slate-400 block mb-1">Category</label>
-                    <select name="projCategory" className="w-full px-4 py-2.5 rounded-xl bg-midnight border border-white/15 text-white">
+                    <label className="text-xs font-medium text-slate-300 block mb-1">Category</label>
+                    <select name="projCategory" className="w-full px-3 py-2 rounded-md bg-app-base border border-app-border text-xs text-white outline-none">
                       <option value="Startup Launch">Startup Launch</option>
                       <option value="Hackathon">Hackathon</option>
                       <option value="Event Planning">Event</option>
-                      <option value="Content Production">Content</option>
+                      <option value="Operations">Operations</option>
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs uppercase text-slate-400 block mb-1">Target Date</label>
-                    <input type="date" name="projTargetDate" defaultValue="2026-12-31" className="w-full px-4 py-2.5 rounded-xl bg-midnight border border-white/15 text-white" />
+                    <label className="text-xs font-medium text-slate-300 block mb-1">Target Date</label>
+                    <input type="date" name="projTargetDate" defaultValue="2026-12-31" className="w-full px-3 py-2 rounded-md bg-app-base border border-app-border text-xs text-white outline-none" />
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs uppercase text-slate-400 block mb-1">Estimated Budget ({db.currency})</label>
-                  <input type="number" name="projBudget" defaultValue="250000" className="w-full px-4 py-2.5 rounded-xl bg-midnight border border-white/15 text-white" />
+                  <label className="text-xs font-medium text-slate-300 block mb-1">Estimated Budget ({db.currency})</label>
+                  <input type="number" name="projBudget" defaultValue="250000" className="w-full px-3 py-2 rounded-md bg-app-base border border-app-border text-xs text-white outline-none" />
                 </div>
-                <button type="submit" className="w-full py-3 rounded-xl bg-gradient-to-r from-aura-blue to-aura-cyan font-bold text-white mt-4 shadow-glow-cyan">Launch Workspace ↗</button>
+                <button type="submit" className="w-full py-2.5 rounded-md bg-blue-600 hover:bg-blue-500 text-xs font-medium text-white transition-colors">
+                  Create Workspace
+                </button>
               </form>
             </main>
           )}
 
-          {/* VIEW: PROJECT WORKSPACE */}
-          {view === 'project' && project && (
-            <main className="max-w-7xl mx-auto px-4 sm:px-8 py-6 animate-fade-in">
-              <div className="p-6 rounded-[2.5rem] bg-surface-glass border border-white/15 backdrop-blur-2xl mb-6 shadow-glass">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          {/* ========================================================
+              VIEW 4: PROJECT WORKSPACE
+             ======================================================== */}
+          {view === 'project' && authUser && project && (
+            <main className="max-w-6xl mx-auto px-6 py-6 flex-1 w-full">
+              <div className="p-6 rounded-lg border border-app-border bg-app-panel mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <span className="text-xs font-mono uppercase px-2.5 py-0.5 rounded-full bg-aura-blue/20 text-aura-sky font-semibold">{project.category}</span>
-                    <h1 className="text-3xl font-bold text-white mt-2">{project.name}</h1>
-                    <p className="text-xs text-slate-300 mt-1">{project.tagline}</p>
+                    <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-app-card border border-app-border text-slate-300">
+                      {project.category}
+                    </span>
+                    <h1 className="text-xl font-bold text-white mt-2">{project.name}</h1>
+                    <p className="text-xs text-slate-400 mt-0.5">{project.tagline}</p>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => setInviteModalOpen(true)} className="px-4 py-2 rounded-full bg-white/10 text-xs font-semibold text-white">+ Invite Crew</button>
-                    <button onClick={() => setIsAIModalOpen(true)} className="px-4 py-2 rounded-full bg-gradient-to-r from-aura-coral to-aura-sunset text-xs font-bold text-white shadow-glow-coral">⚡ AI Plan</button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setInviteModalOpen(true)} className="px-3 py-1.5 rounded-md border border-app-border text-xs text-slate-300 hover:text-white hover:bg-app-card">
+                      + Invite Teammates
+                    </button>
+                    <button onClick={() => setIsAIModalOpen(true)} className="px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-xs text-white font-medium">
+                      AI Sprint Breakdown
+                    </button>
                   </div>
                 </div>
 
-                <div className="flex gap-2 mt-6 pt-4 border-t border-white/10 overflow-x-auto text-xs">
-                  {['overview', 'tasks', 'decisions', 'budget', 'team'].map(tab => (
-                    <button key={tab} onClick={() => setActiveProjectTab(tab)} className={`px-4 py-2 rounded-full capitalize font-semibold transition-all ${activeProjectTab === tab ? 'bg-white text-midnight' : 'text-slate-400 hover:text-white'}`}>
+                <div className="flex gap-2 mt-6 pt-4 border-t border-app-border text-xs">
+                  {['overview', 'tasks', 'decisions', 'budget'].map(tab => (
+                    <button 
+                      key={tab} 
+                      onClick={() => setActiveProjectTab(tab)} 
+                      className={`px-3 py-1.5 rounded-md capitalize transition-colors ${activeProjectTab === tab ? 'bg-app-card text-white border border-app-border' : 'text-slate-400 hover:text-slate-200'}`}
+                    >
                       {tab}
                     </button>
                   ))}
@@ -635,32 +668,32 @@
 
               {/* OVERVIEW TAB */}
               {activeProjectTab === 'overview' && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                  <div className="p-6 rounded-3xl bg-surface-glass border border-white/10">
-                    <span className="text-xs font-mono text-slate-400 uppercase">Mission Velocity</span>
-                    <div className="text-3xl font-bold text-white mt-2">{taskMetrics.progress}%</div>
-                    <div className="w-full bg-white/10 h-2 rounded-full mt-3 overflow-hidden">
-                      <div className="bg-aura-cyan h-full rounded-full" style={{ width: `${taskMetrics.progress}%` }}></div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="p-5 rounded-lg border border-app-border bg-app-panel">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase">Velocity</span>
+                    <div className="text-2xl font-bold text-white mt-1">{taskMetrics.progress}%</div>
+                    <div className="w-full bg-app-card h-1.5 rounded-full mt-3 overflow-hidden">
+                      <div className="bg-blue-500 h-full rounded-full" style={{ width: `${taskMetrics.progress}%` }}></div>
                     </div>
                   </div>
-                  <div className="p-6 rounded-3xl bg-surface-glass border border-white/10">
-                    <span className="text-xs font-mono text-slate-400 uppercase">Budget Expended</span>
-                    <div className="text-3xl font-bold text-aura-sky mt-2">{formatCurrency(budgetMetrics.spent)}</div>
-                    <div className="text-xs text-slate-400 mt-1">Remaining: {formatCurrency(budgetMetrics.remaining)}</div>
+                  <div className="p-5 rounded-lg border border-app-border bg-app-panel">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase">Budget Expended</span>
+                    <div className="text-2xl font-bold text-white mt-1">{formatCurrency(budgetMetrics.spent)}</div>
+                    <div className="text-xs text-slate-400 mt-1">Allocated: {formatCurrency(project.totalBudget)}</div>
                   </div>
-                  <div className="p-6 rounded-3xl bg-surface-glass border border-white/10">
-                    <span className="text-xs font-mono text-slate-400 uppercase">Signed Decisions</span>
-                    <div className="text-3xl font-bold text-aura-coral mt-2">{project.decisions.length} Locked</div>
-                    <div className="text-xs text-emerald-400 mt-1">Consensus recorded</div>
+                  <div className="p-5 rounded-lg border border-app-border bg-app-panel">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase">Decisions Signed</span>
+                    <div className="text-2xl font-bold text-white mt-1">{project.decisions.length}</div>
+                    <div className="text-xs text-slate-400 mt-1">Audit log active</div>
                   </div>
                 </div>
               )}
 
-              {/* TASKS TAB (KANBAN) */}
+              {/* TASKS TAB */}
               {activeProjectTab === 'tasks' && (
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-white">Tasks</h2>
+                    <h2 className="text-sm font-semibold text-white uppercase tracking-wider">Sprint Task Board</h2>
                     <button onClick={async () => {
                       const title = prompt('Task title:');
                       if (!title) return;
@@ -669,9 +702,8 @@
                         title,
                         column: 'todo',
                         priority: 'high',
-                        assignee: db.user.name,
-                        dueDate: '2026-11-20',
-                        checklist: []
+                        assignee: authUser.email.split('@')[0],
+                        dueDate: '2026-11-20'
                       };
                       const updatedProjects = db.projects.map(p => p.id === project.id ? { ...p, tasks: [newTask, ...p.tasks] } : p);
                       updateDb({ ...db, projects: updatedProjects });
@@ -688,27 +720,36 @@
                         }]);
                       }
                       showToast(`Task created: ${title}`);
-                    }} className="px-4 py-2 rounded-full bg-gradient-to-r from-aura-blue to-aura-cyan text-xs font-bold text-white shadow-glow-cyan">+ Add Task</button>
+                    }} className="px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-xs font-medium text-white">
+                      + Add Task
+                    </button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                     {['todo', 'in_progress', 'review', 'done'].map(col => {
                       const colTasks = project.tasks.filter(t => t.column === col);
                       return (
-                        <div key={col} className="p-4 rounded-3xl bg-surface-glass border border-white/10">
-                          <h4 className="text-xs font-bold uppercase text-slate-400 mb-3">{col.replace('_', ' ')} ({colTasks.length})</h4>
-                          <div className="space-y-3">
+                        <div key={col} className="p-3.5 rounded-lg border border-app-border bg-app-panel flex flex-col">
+                          <div className="flex justify-between items-center pb-2.5 mb-2.5 border-b border-app-border text-xs font-semibold uppercase text-slate-400">
+                            <span>{col.replace('_', ' ')}</span>
+                            <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-app-card text-slate-300">{colTasks.length}</span>
+                          </div>
+                          <div className="space-y-2 flex-1">
                             {colTasks.map(t => (
-                              <div key={t.id} className="p-3.5 rounded-2xl bg-surface-elevated border border-white/10 text-xs">
-                                <div className="font-semibold text-white">{t.title}</div>
+                              <div key={t.id} className="p-3 rounded-md border border-app-border bg-app-card text-xs">
+                                <div className="font-medium text-slate-200">{t.title}</div>
                                 <div className="text-[10px] text-slate-400 mt-2 flex justify-between items-center">
                                   <span>{t.assignee}</span>
-                                  <select value={t.column} onChange={async (e) => {
-                                    const newCol = e.target.value;
-                                    const updatedTasks = project.tasks.map(x => x.id === t.id ? { ...x, column: newCol } : x);
-                                    updateDb({ ...db, projects: db.projects.map(p => p.id === project.id ? { ...p, tasks: updatedTasks } : p) });
-                                    if (supabase) await supabase.from('tasks').update({ column_name: newCol }).eq('id', t.id);
-                                  }} className="bg-midnight text-aura-cyan rounded px-1 outline-none">
+                                  <select 
+                                    value={t.column} 
+                                    onChange={async (e) => {
+                                      const newCol = e.target.value;
+                                      const updatedTasks = project.tasks.map(x => x.id === t.id ? { ...x, column: newCol } : x);
+                                      updateDb({ ...db, projects: db.projects.map(p => p.id === project.id ? { ...p, tasks: updatedTasks } : p) });
+                                      if (supabase) await supabase.from('tasks').update({ column_name: newCol }).eq('id', t.id);
+                                    }} 
+                                    className="bg-app-base text-slate-300 rounded px-1.5 py-0.5 border border-app-border outline-none text-[10px]"
+                                  >
                                     <option value="todo">To Do</option>
                                     <option value="in_progress">In Progress</option>
                                     <option value="review">Review</option>
@@ -717,6 +758,11 @@
                                 </div>
                               </div>
                             ))}
+                            {colTasks.length === 0 && (
+                              <div className="p-4 text-center text-[10px] text-slate-500 font-mono border border-dashed border-app-border rounded">
+                                Empty
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -729,11 +775,11 @@
               {activeProjectTab === 'decisions' && (
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-white">Signed Decisions</h2>
+                    <h2 className="text-sm font-semibold text-white uppercase tracking-wider">Signed Decisions Log</h2>
                     <button onClick={async () => {
-                      const title = prompt('Decision Title:');
+                      const title = prompt('Decision topic:');
                       if (!title) return;
-                      const chosen = prompt('Chosen resolution:') || '';
+                      const chosen = prompt('Chosen option:') || '';
                       const rationale = prompt('Rationale:') || '';
                       const newDec = {
                         id: `dec-${Date.now()}`,
@@ -742,8 +788,8 @@
                         chosen,
                         rationale,
                         status: 'Approved',
-                        owner: db.user.name,
-                        approvedBy: db.user.name,
+                        owner: authUser.email.split('@')[0],
+                        approvedBy: authUser.email.split('@')[0],
                         date: new Date().toISOString().split('T')[0]
                       };
                       updateDb({ ...db, projects: db.projects.map(p => p.id === project.id ? { ...p, decisions: [newDec, ...p.decisions] } : p) });
@@ -761,22 +807,29 @@
                           date: newDec.date
                         }]);
                       }
-                      showToast('Decision recorded in Supabase!');
-                    }} className="px-4 py-2 rounded-full bg-gradient-to-r from-aura-coral to-aura-sunset text-xs font-bold text-white shadow-glow-coral">+ Record Decision</button>
+                      showToast('Decision registered.');
+                    }} className="px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-xs font-medium text-white">
+                      + Record Decision
+                    </button>
                   </div>
 
                   <div className="space-y-3">
                     {project.decisions.map(d => (
-                      <div key={d.id} className="p-5 rounded-3xl bg-surface-glass border border-white/10 text-xs">
-                        <div className="flex justify-between font-bold text-white text-sm mb-2">
+                      <div key={d.id} className="p-4 rounded-lg border border-app-border bg-app-panel text-xs">
+                        <div className="flex justify-between font-semibold text-white text-sm mb-1.5">
                           <span>{d.title}</span>
-                          <span className="text-emerald-400 font-mono text-xs">{d.status}</span>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{d.status}</span>
                         </div>
                         <p className="text-slate-300"><strong>Chosen:</strong> {d.chosen}</p>
-                        <p className="text-slate-400 mt-1"><strong>Reason:</strong> {d.rationale}</p>
-                        <div className="mt-3 text-[10px] font-mono text-slate-500">Signed by {d.approvedBy} on {d.date}</div>
+                        <p className="text-slate-400 mt-0.5"><strong>Rationale:</strong> {d.rationale}</p>
+                        <div className="mt-2 pt-2 border-t border-app-border text-[10px] font-mono text-slate-500">Signed on {d.date} by {d.approvedBy}</div>
                       </div>
                     ))}
+                    {project.decisions.length === 0 && (
+                      <div className="p-8 text-center text-xs text-slate-500 border border-dashed border-app-border rounded-lg">
+                        No signed decisions recorded for this mission yet.
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -786,8 +839,8 @@
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <div>
-                      <h2 className="text-xl font-bold text-white">Budget Ledger</h2>
-                      <p className="text-xs text-slate-400">Total: {formatCurrency(project.totalBudget)} | Spent: {formatCurrency(budgetMetrics.spent)}</p>
+                      <h2 className="text-sm font-semibold text-white uppercase tracking-wider">Expense Ledger</h2>
+                      <p className="text-xs text-slate-400 mt-0.5">Spent: {formatCurrency(budgetMetrics.spent)} of {formatCurrency(project.totalBudget)}</p>
                     </div>
                     <button onClick={async () => {
                       const title = prompt('Expense description:');
@@ -799,7 +852,7 @@
                         category: 'Operations',
                         amount,
                         date: new Date().toISOString().split('T')[0],
-                        payer: db.user.name,
+                        payer: authUser.email.split('@')[0],
                         status: 'Paid'
                       };
                       updateDb({ ...db, projects: db.projects.map(p => p.id === project.id ? { ...p, expenses: [newExp, ...p.expenses] } : p) });
@@ -815,25 +868,27 @@
                           status: newExp.status
                         }]);
                       }
-                      showToast('Expense recorded!');
-                    }} className="px-4 py-2 rounded-full bg-gradient-to-r from-aura-blue to-aura-cyan text-xs font-bold text-white shadow-glow-cyan">+ Add Expense</button>
+                      showToast('Expense added.');
+                    }} className="px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-xs font-medium text-white">
+                      + Add Expense
+                    </button>
                   </div>
 
-                  <div className="p-4 rounded-3xl bg-surface-glass border border-white/10 overflow-x-auto text-xs">
+                  <div className="rounded-lg border border-app-border bg-app-panel overflow-hidden text-xs">
                     <table className="w-full text-left">
                       <thead>
-                        <tr className="border-b border-white/10 text-slate-400 font-mono">
-                          <th className="pb-2">Description</th>
-                          <th className="pb-2">Payer</th>
-                          <th className="pb-2 text-right">Amount</th>
+                        <tr className="border-b border-app-border text-slate-400 font-mono text-[10px]">
+                          <th className="p-3">Description</th>
+                          <th className="p-3">Payer</th>
+                          <th className="p-3 text-right">Amount</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-white/5">
+                      <tbody className="divide-y divide-app-border">
                         {project.expenses.map(e => (
                           <tr key={e.id}>
-                            <td className="py-2.5 font-semibold text-white">{e.title}</td>
-                            <td className="py-2.5 text-slate-400">{e.payer}</td>
-                            <td className="py-2.5 text-right font-mono text-aura-cyan font-bold">{formatCurrency(e.amount)}</td>
+                            <td className="p-3 font-medium text-slate-200">{e.title}</td>
+                            <td className="p-3 text-slate-400">{e.payer}</td>
+                            <td className="p-3 text-right font-mono text-slate-100">{formatCurrency(e.amount)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -841,66 +896,92 @@
                   </div>
                 </div>
               )}
-
-              {/* TEAM TAB */}
-              {activeProjectTab === 'team' && (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-white">Team Roster</h2>
-                    <button onClick={() => setInviteModalOpen(true)} className="px-4 py-2 rounded-full bg-gradient-to-r from-aura-blue to-aura-cyan text-xs font-bold text-white shadow-glow-cyan">+ Invite Member</button>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {project.members.map(m => (
-                      <div key={m.id} className="p-4 rounded-2xl bg-surface-glass border border-white/10 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-surface-elevated border border-white/20 flex items-center justify-center font-bold text-white text-xs">{m.avatar}</div>
-                          <div>
-                            <div className="font-bold text-white text-sm">{m.name}</div>
-                            <div className="text-xs text-slate-400">{m.title} • {m.role}</div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </main>
           )}
 
-          {/* AUTH MODAL (SIGN IN / SIGN UP) */}
+          {/* ========================================================
+              CLEAN MINIMAL AUTH MODAL (EMAIL + GOOGLE)
+             ======================================================== */}
           {authModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-midnight/80 backdrop-blur-2xl animate-fade-in">
-              <div className="w-full max-w-sm p-6 sm:p-8 rounded-[2rem] bg-surface-elevated border border-white/20 shadow-glow-cyan">
-                <div className="flex justify-between items-center mb-6">
-                  <div>
-                    <h3 className="text-xl font-bold text-white">{authMode === 'signin' ? 'Sign In' : 'Create Account'}</h3>
-                    <p className="text-xs text-slate-400 mt-1">{authMode === 'signin' ? 'Sign in to access your missions' : 'Join CrewOS to launch your squad'}</p>
-                  </div>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+              <div className="w-full max-w-sm p-6 rounded-lg bg-app-panel border border-app-border shadow-2xl">
+                
+                <div className="flex justify-between items-center mb-5">
+                  <h3 className="text-base font-semibold text-white">
+                    {authMode === 'signin' ? 'Sign in to CrewOS' : 'Create an account'}
+                  </h3>
                   <button onClick={() => setAuthModalOpen(false)} className="text-slate-400 hover:text-white">✕</button>
                 </div>
 
-                <form onSubmit={handleAuthSubmit} className="space-y-4">
+                {/* Google Sign-in Button */}
+                <button
+                  type="button"
+                  onClick={handleGoogleAuth}
+                  className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-md border border-app-border bg-app-card hover:bg-slate-800 text-xs font-medium text-slate-200 transition-colors mb-4"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/>
+                    <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+                    <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3 0-.8.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15s.7 5.3 1.9 7.7l3.7-2.9z"/>
+                    <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2-6.4-4.8L1.9 16.4C3.7 20.1 7.5 23 12 23z"/>
+                  </svg>
+                  <span>Continue with Google</span>
+                </button>
+
+                <div className="flex items-center gap-3 my-4">
+                  <div className="flex-1 h-px bg-app-border"></div>
+                  <span className="text-[10px] text-slate-500 uppercase font-mono">or email</span>
+                  <div className="flex-1 h-px bg-app-border"></div>
+                </div>
+
+                {authErrorMessage && (
+                  <div className="p-2.5 mb-3 rounded bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+                    {authErrorMessage}
+                  </div>
+                )}
+
+                <form onSubmit={handleEmailAuth} className="space-y-3">
                   <div>
-                    <label className="block text-xs font-semibold uppercase text-slate-300 mb-1.5">Email</label>
-                    <input type="email" required value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} placeholder="you@example.com" className="w-full px-4 py-2.5 rounded-xl bg-midnight border border-white/15 text-xs text-white placeholder-slate-500 outline-none focus:border-aura-cyan" />
+                    <label className="text-xs text-slate-400 block mb-1">Email address</label>
+                    <input 
+                      type="email" 
+                      required 
+                      placeholder="name@organization.com" 
+                      value={authEmail} 
+                      onChange={e => setAuthEmail(e.target.value)} 
+                      className="w-full px-3 py-2 rounded-md bg-app-base border border-app-border text-xs text-white outline-none focus:border-blue-500" 
+                    />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold uppercase text-slate-300 mb-1.5">Password</label>
-                    <input type="password" required minLength="6" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} placeholder="••••••••" className="w-full px-4 py-2.5 rounded-xl bg-midnight border border-white/15 text-xs text-white placeholder-slate-500 outline-none focus:border-aura-cyan" />
+                    <label className="text-xs text-slate-400 block mb-1">Password</label>
+                    <input 
+                      type="password" 
+                      required 
+                      minLength="6" 
+                      placeholder="••••••••" 
+                      value={authPassword} 
+                      onChange={e => setAuthPassword(e.target.value)} 
+                      className="w-full px-3 py-2 rounded-md bg-app-base border border-app-border text-xs text-white outline-none focus:border-blue-500" 
+                    />
                   </div>
 
-                  <button type="submit" disabled={authLoading} className="w-full py-3 rounded-xl bg-gradient-to-r from-aura-blue to-aura-cyan text-xs font-bold text-white shadow-glow-cyan hover:scale-[1.02] transition-all disabled:opacity-50">
-                    {authLoading ? 'Verifying...' : (authMode === 'signin' ? 'Sign In ↗' : 'Create Free Account ↗')}
+                  <button 
+                    type="submit" 
+                    disabled={authLoading} 
+                    className="w-full py-2.5 rounded-md bg-blue-600 hover:bg-blue-500 text-xs font-medium text-white transition-colors disabled:opacity-50 mt-1"
+                  >
+                    {authLoading ? 'Verifying...' : (authMode === 'signin' ? 'Sign In' : 'Create Account')}
                   </button>
                 </form>
 
-                <div className="mt-6 pt-4 border-t border-white/10 text-center text-xs text-slate-400">
-                  {authMode === 'signin' ? (
-                    <span>Don't have an account? <button onClick={() => setAuthMode('signup')} className="text-aura-cyan font-semibold hover:underline">Sign up</button></span>
-                  ) : (
-                    <span>Already have an account? <button onClick={() => setAuthMode('signin')} className="text-aura-cyan font-semibold hover:underline">Sign in</button></span>
-                  )}
+                <div className="mt-4 text-center text-xs text-slate-400">
+                  <button 
+                    onClick={() => { setAuthErrorMessage(''); setAuthMode(m => m === 'signin' ? 'signup' : 'signin'); }} 
+                    className="text-blue-400 hover:underline"
+                  >
+                    {authMode === 'signin' ? 'Need an account? Sign up' : 'Already have an account? Sign in'}
+                  </button>
                 </div>
               </div>
             </div>
@@ -908,22 +989,23 @@
 
           {/* AI MODAL */}
           {isAIModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-midnight/80 backdrop-blur-2xl">
-              <div className="w-full max-w-lg p-6 rounded-[2rem] bg-surface-elevated border border-white/20">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold text-white">AI Sprint Planning</h3>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+              <div className="w-full max-w-lg p-6 rounded-lg bg-app-panel border border-app-border">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-sm font-semibold text-white">AI Sprint Decomposition</h3>
                   <button onClick={() => setIsAIModalOpen(false)} className="text-slate-400">✕</button>
                 </div>
-                <textarea rows="3" defaultValue="Deploy beta client onboarding portal and safety compliance checks in 3 weeks." className="w-full p-3 rounded-xl bg-midnight border border-white/15 text-xs text-white mb-4 outline-none focus:border-aura-cyan"></textarea>
+                <p className="text-xs text-slate-400 mb-3">Provide a rough scope goal to auto-generate sprint task phases.</p>
+                <textarea rows="3" defaultValue="Deploy beta client onboarding portal and safety compliance checks in 3 weeks." className="w-full p-3 rounded-md bg-app-base border border-app-border text-xs text-white mb-3 outline-none focus:border-blue-500"></textarea>
                 <button onClick={async () => {
+                  if (!project) return;
                   const aiTask = {
                     id: `t-ai-${Date.now()}`,
                     title: 'Conduct automated safety compliance check audit',
                     column: 'todo',
                     priority: 'urgent',
-                    assignee: db.user.name,
-                    dueDate: '2026-11-25',
-                    checklist: []
+                    assignee: authUser ? authUser.email.split('@')[0] : 'Lead',
+                    dueDate: '2026-11-25'
                   };
                   updateDb({ ...db, projects: db.projects.map(p => p.id === project.id ? { ...p, tasks: [aiTask, ...p.tasks] } : p) });
                   if (supabase) {
@@ -938,31 +1020,30 @@
                     }]);
                   }
                   setIsAIModalOpen(false);
-                  showToast('AI synthesized sprint task scheduled!');
-                }} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-aura-coral to-aura-sunset font-bold text-xs text-white">
-                  Synthesize Sprint Tasks ↗
+                  showToast('AI synthesized sprint tasks.');
+                }} className="w-full py-2 rounded-md bg-blue-600 hover:bg-blue-500 text-xs font-medium text-white">
+                  Synthesize Tasks →
                 </button>
               </div>
             </div>
           )}
 
           {/* INVITE MODAL */}
-          {inviteModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-midnight/80 backdrop-blur-xl">
-              <div className="w-full max-w-md p-6 rounded-3xl bg-surface-elevated border border-white/20 shadow-glass">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold text-white">Invite Crew Members</h3>
+          {inviteModalOpen && project && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+              <div className="w-full max-w-md p-6 rounded-lg bg-app-panel border border-app-border">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-sm font-semibold text-white">Share Workspace Link</h3>
                   <button onClick={() => setInviteModalOpen(false)} className="text-slate-400">✕</button>
                 </div>
-                <div className="p-3 rounded-2xl bg-midnight border border-white/15 flex items-center justify-between mb-4">
-                  <span className="text-xs font-mono text-aura-cyan truncate">https://crewos-blush.vercel.app/join/{project.id}</span>
+                <div className="p-3 rounded bg-app-base border border-app-border flex items-center justify-between text-xs font-mono text-slate-300">
+                  <span className="truncate">{window.location.origin}/join/{project.id}</span>
                   <button onClick={() => {
-                    navigator.clipboard.writeText(`https://crewos-blush.vercel.app/join/${project.id}`);
-                    setInviteCopied(true);
-                    setTimeout(() => setInviteCopied(false), 2000);
-                    showToast('Invite link copied!');
-                  }} className="ml-2 px-3 py-1 rounded-xl bg-white/10 text-xs font-semibold text-white">
-                    {inviteCopied ? 'Copied ✓' : 'Copy'}
+                    navigator.clipboard.writeText(`${window.location.origin}/join/${project.id}`);
+                    showToast('Copied to clipboard');
+                    setInviteModalOpen(false);
+                  }} className="ml-3 px-2.5 py-1 rounded bg-blue-600 text-white font-sans text-xs">
+                    Copy
                   </button>
                 </div>
               </div>
