@@ -295,6 +295,67 @@
     // --- MAIN APP CONTAINER ---
     function CrewOSApp() {
       const [db, setDb] = useState(loadDB);
+            // Sync from Supabase on mount
+      useEffect(() => {
+        if (!supabase) return;
+
+        async function fetchRemoteData() {
+          try {
+            const { data: remoteProjects, error } = await supabase
+              .from('projects')
+              .select(`
+                *,
+                tasks (*),
+                decisions (*),
+                expenses (*)
+              `);
+
+            if (error) {
+              console.warn('Supabase fetch notice (using cached data):', error.message);
+              return;
+            }
+
+            // If projects exist in the remote database, load them into state
+            if (remoteProjects && remoteProjects.length > 0) {
+              const formatted = remoteProjects.map(p => ({
+                id: p.id,
+                name: p.name,
+                tagline: p.tagline,
+                category: p.category,
+                status: p.status || 'Active',
+                startDate: p.start_date,
+                targetDate: p.target_date,
+                totalBudget: Number(p.total_budget || 0),
+                progress: p.progress || 0,
+                members: [
+                  { id: 'm-101', name: 'Jordan Rivera', role: 'Owner', title: 'Mission Commander', avatar: 'JR', email: 'jordan@crewos.local' }
+                ],
+                tasks: (p.tasks || []).map(t => ({
+                  id: t.id,
+                  title: t.title,
+                  column: t.column_name,
+                  priority: t.priority,
+                  assignee: t.assignee,
+                  dueDate: t.due_date,
+                  checklist: []
+                })),
+                decisions: p.decisions || [],
+                expenses: p.expenses || [],
+                resources: [],
+                activity: [{ id: `act-init`, actor: 'System', action: 'synced from cloud', target: p.name, time: 'Just now' }]
+              }));
+
+              setDb(prev => ({ ...prev, projects: formatted }));
+              showToast('Synced with Supabase Cloud ✓');
+            }
+          } catch (err) {
+            console.error('Supabase connection error:', err);
+          }
+        }
+
+        fetchRemoteData();
+      }, []);
+
       const [view, setView] = useState('landing'); // 'landing' | 'dashboard' | 'project' | 'new-project'
       const [activeProjectId, setActiveProjectId] = useState('proj-atlas');
       const [activeProjectTab, setActiveProjectTab] = useState('overview'); // overview | tasks | decisions | budget | resources | team | recap
