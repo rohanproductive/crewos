@@ -1578,10 +1578,31 @@
                         const updatedProjects = db.projects.map(p => p.id === project.id ? { ...p, decisions: [newDec, ...p.decisions] } : p);
                         updateDb({ ...db, projects: updatedProjects });
                         showToast(`Decision registered: ${title}`);
+                        // Sync new decision to Supabase
+if (supabase) {
+  supabase.from('decisions').insert([{
+    id: newDec.id,
+    project_id: project.id,
+    title: newDec.title,
+    context: newDec.context,
+    chosen: newDec.chosen,
+    rationale: newDec.rationale,
+    status: newDec.status,
+    owner: newDec.owner,
+    approved_by: newDec.approvedBy,
+    date: newDec.date
+  }]).then(({ error }) => {
+    if (error) {
+      console.error('Supabase decision insert error:', error.message);
+    }
+  });
+}
+
                       }}
                       className="px-5 py-2.5 rounded-full bg-gradient-to-r from-aura-coral to-aura-sunset text-xs font-bold text-white shadow-glow-coral"
                     >
                       + Record New Decision
+                      
                     </button>
                   </div>
 
