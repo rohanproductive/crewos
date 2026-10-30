@@ -1115,6 +1115,23 @@
                     recap: null
                   };
                   updateDb({ ...db, projects: [newProj, ...db.projects] });
+              // Sync new project to Supabase
+if (supabase) {
+  supabase.from('projects').insert([{
+    id: newProj.id,
+    name: newProj.name,
+    tagline: newProj.tagline,
+    category: newProj.category,
+    status: newProj.status,
+    start_date: newProj.startDate,
+    target_date: newProj.targetDate,
+    total_budget: newProj.totalBudget,
+    progress: newProj.progress
+  }]).then(({ error }) => {
+    if (error) console.error('Supabase project creation error:', error.message);
+  });
+}
+
                   setActiveProjectId(newProj.id);
                   setView('project');
                   setActiveProjectTab('overview');
