@@ -1548,6 +1548,10 @@ if (supabase) {
                                 const updatedTasks = project.tasks.filter(t => t.id !== task.id);
                                 const updatedProjects = db.projects.map(p => p.id === project.id ? { ...p, tasks: updatedTasks } : p);
                                 updateDb({ ...db, projects: updatedProjects });
+                                if (supabase) {
+  supabase.from('tasks').update({ column_name: newCol }).eq('id', task.id).then();
+}
+
                                 showToast('Task deleted');
                               }}
                               className="text-xs text-rose-400 hover:text-rose-300 px-2 py-1"
