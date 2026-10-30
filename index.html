@@ -1759,6 +1759,22 @@ if (supabase) {
                         };
                         const updatedProjects = db.projects.map(p => p.id === project.id ? { ...p, resources: [newRes, ...p.resources] } : p);
                         updateDb({ ...db, projects: updatedProjects });
+                        // Sync new expense to Supabase
+if (supabase) {
+  supabase.from('expenses').insert([{
+    id: newExp.id,
+    project_id: project.id,
+    title: newExp.title,
+    category: newExp.category,
+    amount: newExp.amount,
+    payer: newExp.payer,
+    date: newExp.date,
+    status: newExp.status
+  }]).then(({ error }) => {
+    if (error) console.error('Supabase expense error:', error.message);
+  });
+}
+
                         showToast(`Resource saved: ${title}`);
                       }}
                       className="px-4 py-2 rounded-full bg-gradient-to-r from-aura-blue to-aura-cyan text-xs font-bold text-white shadow-glow-cyan"
