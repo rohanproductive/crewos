@@ -1,0 +1,2037 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CrewOS — The Operating System for Teams on a Mission</title>
+  
+  <!-- Fonts: Newsreader (Editorial Serif) & Plus Jakarta Sans (Interface) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- React 18 & Babel for standalone execution -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Newsreader', 'Georgia', 'serif'],
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            midnight: '#040714',
+            surface: {
+              DEFAULT: '#080E21',
+              elevated: '#0D1630',
+              glass: 'rgba(255, 255, 255, 0.04)',
+              glassBorder: 'rgba(255, 255, 255, 0.12)',
+            },
+            aura: {
+              blue: '#2563EB',
+              cyan: '#06B6D4',
+              sky: '#38BDF8',
+              coral: '#FF6B4A',
+              sunset: '#F97316',
+              peach: '#FDA4AF',
+              amber: '#F59E0B'
+            }
+          },
+          boxShadow: {
+            'glow-cyan': '0 0 35px -5px rgba(6, 182, 212, 0.35)',
+            'glow-coral': '0 0 45px -8px rgba(255, 107, 74, 0.4)',
+            'glass': '0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12)'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Fluted glass vertical streak overlay matching reference images */
+    .fluted-overlay {
+      background-image: repeating-linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.015) 0px,
+        rgba(255, 255, 255, 0.015) 1px,
+        transparent 1px,
+        transparent 16px
+      );
+    }
+    
+    /* Ethereal backdrop aura bloom */
+    .aurora-bloom {
+      background: 
+        radial-gradient(circle at 50% 65%, rgba(255, 107, 74, 0.28) 0%, rgba(249, 115, 22, 0.15) 24%, transparent 55%),
+        radial-gradient(circle at 20% 30%, rgba(37, 99, 235, 0.35) 0%, transparent 50%),
+        radial-gradient(circle at 80% 25%, rgba(6, 182, 212, 0.32) 0%, transparent 45%),
+        radial-gradient(circle at 50% -10%, rgba(59, 130, 246, 0.25) 0%, transparent 60%),
+        #040714;
+    }
+
+    /* Custom smooth scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #040714; }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.28); }
+
+    /* Print styles for Handover Recap Report */
+    @media print {
+      body { background: #ffffff !important; color: #111827 !important; }
+      .no-print { display: none !important; }
+      .print-card { border: 1px solid #e5e7eb !important; background: #ffffff !important; color: #111827 !important; }
+    }
+  </style>
+</head>
+
+<body class="bg-midnight text-slate-100 font-sans antialiased selection:bg-aura-cyan/30 selection:text-white min-h-screen overflow-x-hidden">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    // --- SEED DATA & STORAGE MANAGER ---
+    const STORAGE_KEY = 'crewos_db_v2';
+
+    const INITIAL_DATA = {
+      user: {
+        id: 'usr-101',
+        name: 'Jordan Rivera',
+        email: 'jordan@crewos.local',
+        role: 'Crew Director',
+        avatar: 'JR'
+      },
+      currency: 'INR', // ₹ by default
+      currencySymbol: '₹',
+      projects: [
+        {
+          id: 'proj-atlas',
+          name: 'Launch Project Atlas',
+          tagline: 'Autonomous localized delivery drone network pilot.',
+          category: 'Startup Launch',
+          status: 'Active',
+          startDate: '2026-10-15',
+          targetDate: '2026-12-20',
+          totalBudget: 450000,
+          progress: 68,
+          members: [
+            { id: 'm-1', name: 'Jordan Rivera', role: 'Owner', title: 'Founder & Tech', avatar: 'JR', email: 'jordan@crewos.local' },
+            { id: 'm-2', name: 'Maya Chen', role: 'Admin', title: 'Lead Product Design', avatar: 'MC', email: 'maya@design.co' },
+            { id: 'm-3', name: 'Ethan Vance', role: 'Member', title: 'Avionics Firmware', avatar: 'EV', email: 'ethan@avionics.dev' },
+            { id: 'm-4', name: 'Samira Patel', role: 'Member', title: 'Growth & Regulations', avatar: 'SP', email: 'samira@growth.io' }
+          ],
+          tasks: [
+            { id: 't-1', title: 'Design FAA Part 107 safety test protocols', column: 'done', priority: 'high', assignee: 'Maya Chen', dueDate: '2026-10-24', checklist: [{ text: 'Corridor telemetry specs', done: true }, { text: 'Emergency cut-off signoff', done: true }] },
+            { id: 't-2', title: 'Calibrate optical flow sensors on Mark-IV payload', column: 'done', priority: 'urgent', assignee: 'Ethan Vance', dueDate: '2026-10-28', checklist: [{ text: 'Indoor hover test', done: true }, { text: 'Low-light calibration', done: true }] },
+            { id: 't-3', title: 'Finalize brand guidelines & landing page assets', column: 'in_progress', priority: 'medium', assignee: 'Maya Chen', dueDate: '2026-11-04', checklist: [{ text: 'Typography system', done: true }, { text: '3D Drone render loop', done: false }] },
+            { id: 't-4', title: 'Pilot flight permit submission to Civil Aviation Dept', column: 'review', priority: 'urgent', assignee: 'Samira Patel', dueDate: '2026-11-02', checklist: [{ text: 'Form 24B', done: true }, { text: 'Insurance surety bond', done: true }, { text: 'Municipal waiver', done: false }] },
+            { id: 't-5', title: 'Setup telemetry telemetry ingestion pipeline', column: 'todo', priority: 'high', assignee: 'Jordan Rivera', dueDate: '2026-11-08', checklist: [{ text: 'WebSocket server', done: false }, { text: 'PostGIS spatial store', done: false }] },
+            { id: 't-6', title: 'Order backup battery banks & charging hub', column: 'backlog', priority: 'low', assignee: 'Ethan Vance', dueDate: '2026-11-15', checklist: [] }
+          ],
+          decisions: [
+            {
+              id: 'dec-1',
+              title: 'Adopt Cellular LTE fallback alongside 915MHz LoRa telemetry',
+              context: 'In dense suburban test sites, LoRa radio packets experienced line-of-sight signal drops around multi-story residential towers.',
+              alternatives: ['Rely purely on high-power amplified LoRa', 'Dual-redundant eSIM multi-carrier telemetry', 'Satellite mesh modules'],
+              chosen: 'Dual-redundant eSIM multi-carrier telemetry with auto-handover to LoRa as cold fallback.',
+              rationale: 'LTE provides 50ms roundtrip latency for live high-definition video during compliance maneuvers, while LoRa handles failsafe return-to-base.',
+              status: 'Approved',
+              owner: 'Ethan Vance',
+              approvedBy: 'Jordan Rivera',
+              date: '2026-10-22',
+              history: ['Proposed by Ethan Vance on Oct 20', 'Simulated in bench test on Oct 21', 'Approved & Budget allocated by Jordan on Oct 22']
+            },
+            {
+              id: 'dec-2',
+              title: 'Zero-hardware spectator dashboard architecture',
+              context: 'City inspectors requested real-time geofence compliance verification without installing dedicated ground beacons.',
+              alternatives: ['Web app with WebGL 3D radar map', 'Native iPad app distributed via TestFlight', 'Public REST status endpoint only'],
+              chosen: 'Mobile-first PWA WebGL live dashboard streamable via single-use encrypted crew QR codes.',
+              rationale: 'Instant zero-install access on municipal inspect tablets with zero App Store review lag.',
+              status: 'Approved',
+              owner: 'Maya Chen',
+              approvedBy: 'Jordan Rivera',
+              date: '2026-10-26',
+              history: ['Proposed by Maya Chen', 'Prototype verified with inspector checklist']
+            }
+          ],
+          expenses: [
+            { id: 'exp-1', title: 'Mark-IV Carbon Fiber Airframe Spares', category: 'Hardware', amount: 84000, date: '2026-10-18', payer: 'Ethan Vance', status: 'Paid' },
+            { id: 'exp-2', title: 'Civil Drone Third-Party Liability Insurance', category: 'Legal & Compliance', amount: 125000, date: '2026-10-20', payer: 'Samira Patel', status: 'Paid' },
+            { id: 'exp-3', title: 'eSIM IoT Data Subscriptions (6-Month Pooling)', category: 'Infrastructure', amount: 18500, date: '2026-10-25', payer: 'Jordan Rivera', status: 'Paid' },
+            { id: 'exp-4', title: 'Suburban Test Corridor Airspace Rental (3 Weeks)', category: 'Operations', amount: 95000, date: '2026-11-05', payer: 'Samira Patel', status: 'Planned' },
+            { id: 'exp-5', title: '4K Camera Gimbal Telemetry Rig', category: 'Hardware', amount: 48000, date: '2026-11-10', payer: 'Jordan Rivera', status: 'Planned' }
+          ],
+          resources: [
+            { id: 'res-1', title: 'Figma System & Telemetry HUD Tokens', url: 'https://figma.com/@crewos/atlas-hud', type: 'Design', author: 'Maya Chen', date: '2026-10-17' },
+            { id: 'res-2', title: 'Firmware Repositories & Flight Controllers', url: 'https://github.com/atlas-aerospace/flight-core', type: 'Code', author: 'Ethan Vance', date: '2026-10-19' },
+            { id: 'res-3', title: 'FAA & DGCA Compliance Flight Log Sheets', url: 'https://drive.google.com/compliance-atlas-v4', type: 'Docs', author: 'Samira Patel', date: '2026-10-21' }
+          ],
+          activity: [
+            { id: 'act-1', actor: 'Ethan Vance', action: 'completed task', target: 'Calibrate optical flow sensors', time: '4 hours ago' },
+            { id: 'act-2', actor: 'Jordan Rivera', action: 'approved decision', target: 'Zero-hardware spectator dashboard', time: '1 day ago' },
+            { id: 'act-3', actor: 'Samira Patel', action: 'logged expense', target: 'Airspace Rental (₹95,000)', time: '2 days ago' },
+            { id: 'act-4', actor: 'Maya Chen', action: 'created design resource', target: 'Figma System & Telemetry HUD', time: '4 days ago' }
+          ],
+          recap: {
+            missionGoal: 'Launch an autonomous corridor pilot in under 60 days with full municipal safety signoffs.',
+            achievements: [
+              'Passed optical flow hover tolerances in gust conditions up to 24 knots.',
+              'Achieved sub-60ms command telemetry via dual-redundant cellular fallback.',
+              'Secured pre-clearance with local municipal logistics zone.'
+            ],
+            lessonsLearned: 'Procure backup avionics wiring harnesses early; international customs delayed shipment by 8 days.',
+            recommendations: 'Expand team with a dedicated battery charging cycle technician before launching the public phase 2.'
+          }
+        },
+        {
+          id: 'proj-hackathon',
+          name: 'NexusAI Hackathon Squad',
+          tagline: '72-hour autonomous voice agent for emergency dispatchers.',
+          category: 'Hackathon',
+          status: 'Active',
+          startDate: '2026-10-28',
+          targetDate: '2026-11-01',
+          totalBudget: 40000,
+          progress: 82,
+          members: [
+            { id: 'm-10', name: 'Jordan Rivera', role: 'Owner', title: 'Fullstack Dev', avatar: 'JR', email: 'jordan@crewos.local' },
+            { id: 'm-11', name: 'Aria Sterling', role: 'Admin', title: 'AI Research', avatar: 'AS', email: 'aria@ai.org' },
+            { id: 'm-12', name: 'Devon Reed', role: 'Member', title: 'Audio Pipeline', avatar: 'DR', email: 'devon@sound.io' }
+          ],
+          tasks: [
+            { id: 'th-1', title: 'Train ultra-low latency voice activity detector', column: 'done', priority: 'urgent', assignee: 'Aria Sterling', dueDate: '2026-10-29', checklist: [] },
+            { id: 'th-2', title: 'Integrate real-time speech websocket stream', column: 'done', priority: 'high', assignee: 'Devon Reed', dueDate: '2026-10-30', checklist: [] },
+            { id: 'th-3', title: 'Slide deck & 3-minute live pitch script', column: 'in_progress', priority: 'urgent', assignee: 'Jordan Rivera', dueDate: '2026-10-31', checklist: [] }
+          ],
+          decisions: [
+            {
+              id: 'dech-1',
+              title: 'Use WebRTC instead of HTTP chunk streaming',
+              context: 'Lag in voice interruptions destroyed the illusion of human presence.',
+              alternatives: ['HTTP SSE', 'Raw WebSockets', 'WebRTC Audio Channels'],
+              chosen: 'WebRTC Audio Channels',
+              rationale: 'Dropped interactive roundtrip voice response from 720ms to 180ms.',
+              status: 'Approved',
+              owner: 'Devon Reed',
+              approvedBy: 'Jordan Rivera',
+              date: '2026-10-29',
+              history: ['Approved in midnight sprint']
+            }
+          ],
+          expenses: [
+            { id: 'exph-1', title: 'GPU Cloud Compute Credits (A100 instances)', category: 'Compute', amount: 14500, date: '2026-10-29', payer: 'Aria Sterling', status: 'Paid' },
+            { id: 'exph-2', title: 'Voice synthesis API high-concurrency tier', category: 'API', amount: 8200, date: '2026-10-30', payer: 'Jordan Rivera', status: 'Paid' }
+          ],
+          resources: [
+            { id: 'resh-1', title: 'Live Prototype Demo Link', url: 'https://nexus-voice.live', type: 'App', author: 'Jordan Rivera', date: '2026-10-30' }
+          ],
+          activity: [
+            { id: 'acth-1', actor: 'Jordan Rivera', action: 'pushed live build', target: 'nexus-voice.live', time: '1 hour ago' }
+          ],
+          recap: null
+        }
+      ]
+    };
+
+    // Load or initialize DB
+    function loadDB() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {
+        console.error('Failed reading localStorage', e);
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_DATA));
+      return INITIAL_DATA;
+    }
+
+    function saveDB(data) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } catch (e) {
+        console.error('Failed saving database', e);
+      }
+    }
+
+    // --- REUSABLE UI ICONS & GLOW HELPERS ---
+    const Icon = ({ name, className = "w-4 h-4", ...props }) => {
+      // Dynamic Lucide rendering fallback
+      return <i data-lucide={name} className={`inline-block align-middle ${className}`} {...props}></i>;
+    };
+
+    // --- MAIN APP CONTAINER ---
+    function CrewOSApp() {
+      const [db, setDb] = useState(loadDB);
+      const [view, setView] = useState('landing'); // 'landing' | 'dashboard' | 'project' | 'new-project'
+      const [activeProjectId, setActiveProjectId] = useState('proj-atlas');
+      const [activeProjectTab, setActiveProjectTab] = useState('overview'); // overview | tasks | decisions | budget | resources | team | recap
+      const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+      const [aiMode, setAiMode] = useState('plan'); // 'plan' | 'notes' | 'health'
+      const [taskViewMode, setTaskViewMode] = useState('kanban'); // 'kanban' | 'list'
+      const [taskFilterAssignee, setTaskFilterAssignee] = useState('all');
+      const [taskSearch, setTaskSearch] = useState('');
+      const [inviteModalOpen, setInviteModalOpen] = useState(false);
+      const [inviteCopied, setInviteCopied] = useState(false);
+      const [toast, setToast] = useState(null);
+
+      // Trigger Lucide icon re-creation when view changes
+      useEffect(() => {
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      });
+
+      // Save database whenever state updates
+      const updateDb = (newDb) => {
+        setDb(newDb);
+        saveDB(newDb);
+      };
+
+      const showToast = (message) => {
+        setToast(message);
+        setTimeout(() => setToast(null), 3200);
+      };
+
+      // Current active project
+      const project = useMemo(() => {
+        return db.projects.find(p => p.id === activeProjectId) || db.projects[0];
+      }, [db.projects, activeProjectId]);
+
+      // Computed budget metrics
+      const budgetMetrics = useMemo(() => {
+        if (!project) return { spent: 0, planned: 0, remaining: 0, percent: 0, byCat: {} };
+        const spent = project.expenses.filter(e => e.status === 'Paid').reduce((acc, curr) => acc + curr.amount, 0);
+        const planned = project.expenses.filter(e => e.status === 'Planned').reduce((acc, curr) => acc + curr.amount, 0);
+        const totalAllocated = spent + planned;
+        const remaining = Math.max(0, project.totalBudget - spent);
+        const percent = project.totalBudget > 0 ? Math.round((spent / project.totalBudget) * 100) : 0;
+        
+        const byCat = {};
+        project.expenses.forEach(e => {
+          byCat[e.category] = (byCat[e.category] || 0) + e.amount;
+        });
+
+        return { spent, planned, totalAllocated, remaining, percent, byCat };
+      }, [project]);
+
+      // Computed task metrics
+      const taskMetrics = useMemo(() => {
+        if (!project || !project.tasks.length) return { total: 0, done: 0, progress: 0, urgent: 0 };
+        const total = project.tasks.length;
+        const done = project.tasks.filter(t => t.column === 'done').length;
+        const urgent = project.tasks.filter(t => t.priority === 'urgent' && t.column !== 'done').length;
+        const progress = Math.round((done / total) * 100);
+        return { total, done, progress, urgent };
+      }, [project]);
+
+      // Currency formatter
+      const formatCurrency = (amt) => {
+        const symbol = db.currencySymbol || '₹';
+        return `${symbol}${Number(amt).toLocaleString()}`;
+      };
+
+      // ==========================================
+      // VIEW ROUTING
+      // ==========================================
+      return (
+        <div className="relative min-h-screen bg-midnight text-slate-100 selection:bg-cyan-500/30 overflow-x-hidden">
+          {/* Global Fluted Glass Refraction lines overlay */}
+          <div className="fixed inset-0 fluted-overlay pointer-events-none z-10 opacity-70"></div>
+
+          {/* Toast Notification */}
+          {toast && (
+            <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl bg-surface-elevated/95 border border-white/20 text-white shadow-glass backdrop-blur-xl animate-bounce">
+              <span className="w-2.5 h-2.5 rounded-full bg-aura-cyan shadow-[0_0_10px_#06b6d4]"></span>
+              <span className="text-sm font-medium">{toast}</span>
+            </div>
+          )}
+
+          {/* Top Floating Glass Navigation */}
+          <header className="sticky top-0 z-40 w-full px-4 sm:px-8 py-3.5 backdrop-blur-2xl bg-midnight/65 border-b border-white/[0.08] transition-all">
+            <div className="max-w-7xl mx-auto flex items-center justify-between">
+              
+              {/* Brand Logo & Branching Node Glyph */}
+              <div 
+                onClick={() => setView('landing')} 
+                className="flex items-center gap-3.5 cursor-pointer group"
+              >
+                <div className="relative w-9 h-9 rounded-2xl bg-gradient-to-tr from-aura-blue via-aura-cyan to-aura-coral p-[1px] shadow-glow-cyan transition-transform group-hover:scale-105">
+                  <div className="w-full h-full bg-midnight rounded-2xl flex items-center justify-center">
+                    <svg className="w-5 h-5 text-aura-sky" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="18" cy="5" r="2.5" />
+                      <circle cx="6" cy="12" r="2.5" />
+                      <circle cx="18" cy="19" r="2.5" />
+                      <line x1="8.5" y1="13.5" x2="15.5" y2="17.5" />
+                      <line x1="8.5" y1="10.5" x2="15.5" y2="6.5" />
+                    </svg>
+                  </div>
+                </div>
+                <div>
+                  <span className="text-xl font-bold tracking-tight text-white flex items-center gap-1.5 font-sans">
+                    CrewOS <span className="text-xs px-2 py-0.5 rounded-full bg-aura-cyan/15 text-aura-cyan border border-aura-cyan/30 font-mono tracking-normal">2.4</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Center Menu Pills (Landing / Product shortcuts) */}
+              <nav className="hidden md:flex items-center gap-1 px-4 py-1.5 rounded-full bg-surface-glass border border-white/[0.1] backdrop-blur-xl shadow-glass text-sm">
+                <button 
+                  onClick={() => setView('landing')}
+                  className={`px-3.5 py-1 rounded-full transition-all flex items-center gap-1.5 ${view === 'landing' ? 'bg-white/10 text-white font-medium' : 'text-slate-400 hover:text-white'}`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-aura-cyan"></span>
+                  Home
+                </button>
+                <button 
+                  onClick={() => { setView('dashboard'); }}
+                  className={`px-3.5 py-1 rounded-full transition-all ${view === 'dashboard' ? 'bg-white/10 text-white font-medium' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Dashboard
+                </button>
+                <button 
+                  onClick={() => { setView('project'); setActiveProjectTab('tasks'); }}
+                  className={`px-3.5 py-1 rounded-full transition-all ${view === 'project' ? 'bg-white/10 text-white font-medium' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Active Workspace
+                </button>
+                <button 
+                  onClick={() => { setIsAIModalOpen(true); }}
+                  className="px-3.5 py-1 rounded-full text-aura-coral hover:text-white transition-all flex items-center gap-1.5"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-aura-coral animate-ping"></span>
+                  AI Planner
+                </button>
+              </nav>
+
+              {/* Right User Bar / CTA */}
+              <div className="flex items-center gap-3">
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-xs text-slate-300">
+                  <span className="text-slate-500 font-mono">CURRENCY:</span>
+                  <select 
+                    value={db.currency} 
+                    onChange={(e) => {
+                      const cur = e.target.value;
+                      const symb = cur === 'INR' ? '₹' : cur === 'USD' ? '$' : cur === 'EUR' ? '€' : '£';
+                      updateDb({ ...db, currency: cur, currencySymbol: symb });
+                      showToast(`Currency updated to ${cur} (${symb})`);
+                    }}
+                    aria-label="Currency"
+                    className="bg-transparent text-aura-cyan font-bold outline-none cursor-pointer"
+                  >
+                    <option value="INR" className="bg-midnight text-white">INR (₹)</option>
+                    <option value="USD" className="bg-midnight text-white">USD ($)</option>
+                    <option value="EUR" className="bg-midnight text-white">EUR (€)</option>
+                    <option value="GBP" className="bg-midnight text-white">GBP (£)</option>
+                  </select>
+                </div>
+
+                {view === 'landing' ? (
+                  <button 
+                    onClick={() => setView('dashboard')}
+                    className="group relative inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-aura-blue via-aura-cyan to-aura-coral p-[1px] shadow-glow-cyan hover:scale-[1.02] transition-all"
+                  >
+                    <span className="px-4 py-1.5 rounded-full bg-midnight/90 w-full h-full flex items-center gap-2">
+                      Start a crew
+                      <span className="text-xs transition-transform group-hover:translate-x-0.5">↗</span>
+                    </span>
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2.5">
+                    <button 
+                      onClick={() => setView('new-project')} 
+                      className="px-3.5 py-1.5 rounded-full bg-aura-blue/20 hover:bg-aura-blue/30 border border-aura-blue/40 text-xs font-semibold text-aura-sky transition-all flex items-center gap-1.5"
+                    >
+                      <span>+</span> New Mission
+                    </button>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-aura-coral to-aura-cyan flex items-center justify-center font-bold text-xs text-midnight shadow-glow-coral">
+                      {db.user.avatar}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </header>
+
+          {/* ========================================================
+              VIEW 1: CINEMATIC MARKETING LANDING PAGE
+              Matches the visual aesthetic in the provided images:
+              Radiant vertical-striped twilight aura, editorial serif header,
+              floating frosted cards, dynamic radar widget, and workspace preview.
+             ======================================================== */}
+          {view === 'landing' && (
+            <main className="relative">
+              
+              {/* Cinematic Hero Section */}
+              <section className="relative min-h-[92vh] flex flex-col justify-center items-center px-4 sm:px-6 pt-12 pb-24 aurora-bloom overflow-hidden">
+                
+                {/* Background Subtle Wave SVG Lines */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
+                  <svg className="w-full h-full max-w-6xl" viewBox="0 0 1000 600" fill="none">
+                    <path d="M 100 300 Q 250 150, 500 320 T 900 280" stroke="url(#hero-grad-cyan)" strokeWidth="1.5" strokeDasharray="4 6" />
+                    <path d="M 50 380 Q 300 480, 550 300 T 950 360" stroke="url(#hero-grad-coral)" strokeWidth="1.5" />
+                    <defs>
+                      <linearGradient id="hero-grad-cyan" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#06B6D4" stopOpacity="0.2" />
+                        <stop offset="50%" stopColor="#38BDF8" stopOpacity="0.9" />
+                        <stop offset="100%" stopColor="#2563EB" stopOpacity="0.1" />
+                      </linearGradient>
+                      <linearGradient id="hero-grad-coral" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#FF6B4A" stopOpacity="0.1" />
+                        <stop offset="60%" stopColor="#F97316" stopOpacity="0.8" />
+                        <stop offset="100%" stopColor="#FDA4AF" stopOpacity="0.2" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                </div>
+
+                {/* Eyebrow Pill */}
+                <div className="relative z-20 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.05] border border-white/15 backdrop-blur-xl text-xs font-semibold tracking-wider text-slate-300 uppercase mb-8 shadow-glass animate-fade-in">
+                  <span className="w-2 h-2 rounded-full bg-aura-cyan shadow-[0_0_8px_#06b6d4]"></span>
+                  The Operating System for Teams on a Mission
+                </div>
+
+                {/* Main Headline (Editorial Serif Display matching Image 2 vibe) */}
+                <div className="relative z-20 max-w-4xl mx-auto text-center px-4">
+                  <h1 className="font-display italic text-5xl sm:text-7xl lg:text-8xl tracking-tight text-white font-normal leading-[1.08] mb-6">
+                    Great things don’t <br className="hidden sm:inline" />
+                    <span className="font-sans not-italic font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-slate-400">
+                      happen alone.
+                    </span>
+                  </h1>
+
+                  <p className="max-w-2xl mx-auto text-base sm:text-xl text-slate-300 font-light leading-relaxed mb-10">
+                    One high-fidelity space for your crew, your decisions, budgets, and milestones. Built for teams that assemble to launch something extraordinary.
+                  </p>
+
+                  {/* Dual Action CTA Buttons + Glowing Center Pulse (like reference image) */}
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mb-8">
+                    <button 
+                      onClick={() => setView('dashboard')}
+                      className="w-full sm:w-auto px-8 py-3.5 rounded-full text-base font-semibold text-white bg-gradient-to-r from-aura-blue via-aura-cyan to-aura-coral shadow-glow-cyan hover:shadow-glow-coral transition-all transform hover:-translate-y-0.5"
+                    >
+                      Start a crew workspace ↗
+                    </button>
+                    <button 
+                      onClick={() => { setActiveProjectId('proj-atlas'); setView('project'); setActiveProjectTab('overview'); }}
+                      className="w-full sm:w-auto px-8 py-3.5 rounded-full text-base font-medium text-slate-200 bg-white/[0.04] hover:bg-white/[0.08] border border-white/15 backdrop-blur-xl transition-all"
+                    >
+                      Explore live demo project
+                    </button>
+                  </div>
+
+                  <p className="text-xs tracking-widest uppercase text-slate-400 font-mono">
+                    From first idea to final handover. No credit card required.
+                  </p>
+                </div>
+
+                {/* Floating Metric Chips on Sides (matching Image 2) */}
+                <div className="w-full max-w-6xl mx-auto mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 px-4 z-20">
+                  <div className="p-4 rounded-3xl bg-surface-glass border border-white/10 backdrop-blur-2xl text-center shadow-glass hover:border-aura-cyan/40 transition-all">
+                    <div className="text-2xl sm:text-3xl font-bold text-white font-display">100%</div>
+                    <div className="text-xs text-slate-400 mt-1 uppercase tracking-wider">Decision Traceability</div>
+                  </div>
+                  <div className="p-4 rounded-3xl bg-surface-glass border border-white/10 backdrop-blur-2xl text-center shadow-glass hover:border-aura-cyan/40 transition-all">
+                    <div className="text-2xl sm:text-3xl font-bold text-aura-sky font-display">₹ / $ / €</div>
+                    <div className="text-xs text-slate-400 mt-1 uppercase tracking-wider">Multi-currency Ledger</div>
+                  </div>
+                  <div className="p-4 rounded-3xl bg-surface-glass border border-white/10 backdrop-blur-2xl text-center shadow-glass hover:border-aura-coral/40 transition-all">
+                    <div className="text-2xl sm:text-3xl font-bold text-aura-coral font-display">&lt; 3 Min</div>
+                    <div className="text-xs text-slate-400 mt-1 uppercase tracking-wider">AI Sprint Decomposition</div>
+                  </div>
+                  <div className="p-4 rounded-3xl bg-surface-glass border border-white/10 backdrop-blur-2xl text-center shadow-glass hover:border-aura-cyan/40 transition-all">
+                    <div className="text-2xl sm:text-3xl font-bold text-white font-display">1-Click</div>
+                    <div className="text-xs text-slate-400 mt-1 uppercase tracking-wider">Handover Recap Export</div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Interactive Workspace Preview Section (Atlas Demo with Real Interaction) */}
+              <section className="relative max-w-7xl mx-auto px-4 sm:px-8 -mt-16 z-30 pb-28">
+                <div className="p-1 sm:p-2 rounded-[2.5rem] bg-gradient-to-b from-white/20 via-white/5 to-transparent shadow-[0_25px_80px_rgba(0,0,0,0.8)]">
+                  <div className="rounded-[2.2rem] bg-surface-elevated/90 border border-white/15 backdrop-blur-2xl p-6 sm:p-8 overflow-hidden">
+                    
+                    {/* Header Bar inside preview card */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-white/10 gap-4">
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
+                          <span className="text-xs uppercase tracking-widest text-slate-400 font-mono">Live Demo Workspace</span>
+                          <span className="px-2 py-0.5 rounded-full bg-aura-blue/20 text-aura-sky border border-aura-blue/30 text-xs font-semibold">Autonomous Drone Pilot</span>
+                        </div>
+                        <h2 className="text-2xl sm:text-3xl font-bold text-white mt-1">Project Atlas (Mission Phase 1)</h2>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex -space-x-2">
+                          {project.members.map(m => (
+                            <div key={m.id} title={`${m.name} (${m.title})`} className="w-8 h-8 rounded-full bg-surface border border-white/30 text-white flex items-center justify-center text-xs font-bold shadow-md">
+                              {m.avatar}
+                            </div>
+                          ))}
+                        </div>
+                        <button 
+                          onClick={() => { setActiveProjectId('proj-atlas'); setView('project'); }}
+                          className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-semibold text-white transition-all flex items-center gap-1.5"
+                        >
+                          Open in Full Workspace ↗
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Interactive 3-Column Preview Grid */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-6">
+                      
+                      {/* Left: Milestones & Project Health */}
+                      <div className="space-y-4">
+                        <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/10">
+                          <div className="flex justify-between items-center mb-3">
+                            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Mission Velocity</span>
+                            <span className="text-sm font-bold text-aura-cyan">{taskMetrics.progress}% Completed</span>
+                          </div>
+                          <div className="w-full bg-white/10 h-2.5 rounded-full overflow-hidden">
+                            <div className="bg-gradient-to-r from-aura-blue to-aura-cyan h-full rounded-full transition-all duration-700" style={{ width: `${taskMetrics.progress}%` }}></div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-white/10 text-xs">
+                            <div>
+                              <div className="text-slate-400">Total Budget</div>
+                              <div className="text-base font-bold text-white mt-0.5">{formatCurrency(project.totalBudget)}</div>
+                            </div>
+                            <div>
+                              <div className="text-slate-400">Days to Target</div>
+                              <div className="text-base font-bold text-aura-coral mt-0.5">50 Days</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/10">
+                          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Upcoming Key Milestones</h3>
+                          <div className="space-y-2.5 text-xs">
+                            <div className="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/5">
+                              <span className="text-slate-200">Civil Corridor Airspace Clearance</span>
+                              <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">Nov 02</span>
+                            </div>
+                            <div className="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/5">
+                              <span className="text-slate-200">Live Video Telemetry Ground Test</span>
+                              <span className="px-2 py-0.5 rounded bg-aura-cyan/20 text-aura-cyan font-mono">Nov 08</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Middle: Active Task Stream (Click to toggle) */}
+                      <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-col justify-between">
+                        <div>
+                          <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Sprint Tasks</h3>
+                            <span className="text-xs text-slate-400">{project.tasks.length} tracked</span>
+                          </div>
+                          <div className="space-y-2.5">
+                            {project.tasks.slice(0, 4).map(task => (
+                              <div 
+                                key={task.id} 
+                                onClick={() => {
+                                  // Toggle status between todo and done in preview
+                                  const updatedTasks = project.tasks.map(t => t.id === task.id ? { ...t, column: t.column === 'done' ? 'in_progress' : 'done' } : t);
+                                  const updatedProjects = db.projects.map(p => p.id === project.id ? { ...p, tasks: updatedTasks } : p);
+                                  updateDb({ ...db, projects: updatedProjects });
+                                  showToast(`Updated task: ${task.title.substring(0, 24)}...`);
+                                }}
+                                className="p-3 rounded-xl bg-surface/80 border border-white/10 hover:border-aura-cyan/40 transition-all cursor-pointer group flex items-start gap-3"
+                              >
+                                <span className={`mt-0.5 w-4 h-4 rounded-md border flex items-center justify-center text-[10px] ${task.column === 'done' ? 'bg-aura-cyan border-aura-cyan text-midnight font-bold' : 'border-slate-500'}`}>
+                                  {task.column === 'done' ? '✓' : ''}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <div className={`text-xs font-medium truncate ${task.column === 'done' ? 'line-through text-slate-400' : 'text-slate-100'}`}>
+                                    {task.title}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-1.5 text-[11px] text-slate-400">
+                                    <span className="text-aura-sky font-semibold">{task.assignee}</span>
+                                    <span>•</span>
+                                    <span className={task.priority === 'urgent' ? 'text-aura-coral font-bold uppercase' : 'text-slate-400'}>{task.priority}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="text-[11px] text-slate-400 text-center pt-3 border-t border-white/10">
+                          Click any task to toggle status live in state
+                        </div>
+                      </div>
+
+                      {/* Right: Latest Critical Decision Log */}
+                      <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-col justify-between">
+                        <div>
+                          <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Locked Decision Log</h3>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono">Approved</span>
+                          </div>
+                          {project.decisions[0] && (
+                            <div className="p-3.5 rounded-xl bg-surface/90 border border-white/10 space-y-2">
+                              <h4 className="text-xs font-bold text-white leading-snug">{project.decisions[0].title}</h4>
+                              <p className="text-[11px] text-slate-300 line-clamp-3 leading-relaxed">{project.decisions[0].rationale}</p>
+                              <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[10px] text-slate-400">
+                                <span>Owner: <strong className="text-slate-200">{project.decisions[0].owner}</strong></span>
+                                <span className="font-mono">{project.decisions[0].date}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <button 
+                          onClick={() => { setActiveProjectId('proj-atlas'); setView('project'); setActiveProjectTab('decisions'); }}
+                          className="w-full mt-4 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-semibold text-aura-sky border border-white/10 transition-all text-center"
+                        >
+                          View All 2 Signed Decisions →
+                        </button>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* How It Works (3 Steps with High-End Editorial Style) */}
+              <section className="relative max-w-7xl mx-auto px-4 sm:px-8 py-20 border-t border-white/10">
+                <div className="text-center max-w-2xl mx-auto mb-16">
+                  <span className="text-xs font-mono uppercase tracking-widest text-aura-cyan">Architecture</span>
+                  <h2 className="font-display italic text-4xl sm:text-5xl text-white mt-2 font-normal">
+                    Built for the velocity of temporary teams.
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  <div className="p-8 rounded-3xl bg-surface-glass border border-white/10 backdrop-blur-xl relative group hover:border-aura-cyan/40 transition-all">
+                    <span className="text-5xl font-display font-light text-white/20 group-hover:text-aura-cyan/40 transition-colors">01</span>
+                    <h3 className="text-xl font-bold text-white mt-4 mb-2">Create Your Mission</h3>
+                    <p className="text-slate-300 text-sm leading-relaxed">
+                      Choose from specialized blueprints: hackathons, startup launches, event logistics, or creative sprints. Or let our AI planner convert a rough 3-line brief into tasks and milestones.
+                    </p>
+                  </div>
+                  <div className="p-8 rounded-3xl bg-surface-glass border border-white/10 backdrop-blur-xl relative group hover:border-aura-sky/40 transition-all">
+                    <span className="text-5xl font-display font-light text-white/20 group-hover:text-aura-sky/40 transition-colors">02</span>
+                    <h3 className="text-xl font-bold text-white mt-4 mb-2">Assemble & Execute</h3>
+                    <p className="text-slate-300 text-sm leading-relaxed">
+                      Share zero-friction access links with assigned roles. Lock crucial technical and financial decisions in an immutable shared log so no rationale gets lost in chat apps.
+                    </p>
+                  </div>
+                  <div className="p-8 rounded-3xl bg-surface-glass border border-white/10 backdrop-blur-xl relative group hover:border-aura-coral/40 transition-all">
+                    <span className="text-5xl font-display font-light text-white/20 group-hover:text-aura-coral/40 transition-colors">03</span>
+                    <h3 className="text-xl font-bold text-white mt-4 mb-2">Hand Over & Disband</h3>
+                    <p className="text-slate-300 text-sm leading-relaxed">
+                      When the mission is accomplished, export a comprehensive Handover Dossier containing outcomes, balance sheet reconciliation, and key insights for whoever comes next.
+                    </p>
+                  </div>
+                </div>
+              </section>
+
+              {/* Use Cases Grid */}
+              <section className="relative max-w-7xl mx-auto px-4 sm:px-8 py-20 border-t border-white/10">
+                <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
+                  <div>
+                    <span className="text-xs font-mono uppercase tracking-widest text-aura-coral">Flexibility</span>
+                    <h2 className="font-display italic text-4xl text-white mt-1">Who runs on CrewOS?</h2>
+                  </div>
+                  <p className="text-slate-400 text-sm max-w-md mt-4 md:mt-0">
+                    Engineered specifically for crews that exist to finish a specific high-stakes goal.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[
+                    { title: 'Startup Launches', desc: 'Hardware pilots, pre-seed builds, investor demo days and product launches.', tag: 'Founder Squad' },
+                    { title: 'Hackathons & Sprints', desc: '48-hour sprints where speed, instant ownership, and zero-overhead tracking win.', tag: 'Engineering' },
+                    { title: 'Events & Conferences', desc: 'Speaker logistics, vendor payouts, stage management, and safety signoffs.', tag: 'Operations' },
+                    { title: 'Content Production', desc: 'Video shoots, editorial releases, sponsor approvals, and asset libraries.', tag: 'Creative' },
+                    { title: 'Freelance Alliances', desc: 'Independent designers and developers grouping up for single client deliveries.', tag: 'Agencies' },
+                    { title: 'Community Expeditions', desc: 'Non-profit field missions, student clubs, and exploratory field projects.', tag: 'Civic' }
+                  ].map((uc, i) => (
+                    <div key={i} className="p-6 rounded-3xl bg-surface/50 border border-white/[0.08] hover:border-white/20 transition-all">
+                      <span className="text-[11px] font-mono px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-slate-300">{uc.tag}</span>
+                      <h4 className="text-lg font-bold text-white mt-4 mb-1.5">{uc.title}</h4>
+                      <p className="text-xs text-slate-400 leading-relaxed">{uc.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Final Cinematic Call to Action */}
+              <section className="relative max-w-5xl mx-auto px-4 sm:px-8 py-28 text-center">
+                <div className="relative p-12 sm:p-16 rounded-[3rem] bg-gradient-to-tr from-aura-blue/20 via-surface-elevated to-aura-coral/20 border border-white/20 backdrop-blur-3xl shadow-glow-coral overflow-hidden">
+                  <div className="relative z-10">
+                    <h2 className="font-display italic text-4xl sm:text-6xl text-white mb-4">
+                      Your next big thing needs a crew.
+                    </h2>
+                    <p className="text-slate-300 text-base max-w-xl mx-auto mb-8 font-light">
+                      Step into the command center. Bring your teammates together and launch without messy spreadsheets or lost messages.
+                    </p>
+                    <button 
+                      onClick={() => setView('dashboard')}
+                      className="px-9 py-4 rounded-full text-base font-bold text-white bg-gradient-to-r from-aura-blue via-aura-cyan to-aura-coral shadow-glow-cyan hover:scale-105 transition-all"
+                    >
+                      Build your workspace now ↗
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              {/* Minimalist Tech Startup Footer */}
+              <footer className="border-t border-white/10 py-12 px-4 sm:px-8 max-w-7xl mx-auto text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-aura-cyan"></span>
+                  <span className="text-slate-300 font-semibold">CrewOS</span>
+                  <span>— The mission operating system.</span>
+                </div>
+                <div className="flex items-center gap-6">
+                  <button onClick={() => setView('dashboard')} className="hover:text-white transition-colors">Dashboard</button>
+                  <button onClick={() => { setActiveProjectId('proj-atlas'); setView('project'); }} className="hover:text-white transition-colors">Demo Workspace</button>
+                  <button onClick={() => setIsAIModalOpen(true)} className="hover:text-white transition-colors">AI Engine</button>
+                </div>
+              </footer>
+            </main>
+          )}
+
+
+          {/* ========================================================
+              VIEW 2: MAIN DASHBOARD
+              User projects portfolio, urgent tasks assigned to user,
+              milestones countdown, quick actions, and recent activity.
+             ======================================================== */}
+          {view === 'dashboard' && (
+            <main className="max-w-7xl mx-auto px-4 sm:px-8 py-8 animate-fade-in">
+              
+              {/* Welcome Header */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between pb-8 border-b border-white/10 gap-4">
+                <div>
+                  <div className="text-xs font-mono uppercase tracking-widest text-aura-cyan flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-aura-cyan"></span>
+                    Mission Command • {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </div>
+                  <h1 className="text-3xl sm:text-4xl font-bold text-white mt-1">Welcome back, {db.user.name}</h1>
+                  <p className="text-sm text-slate-400 mt-1">You have {db.projects.length} active missions running. 2 tasks require your signoff today.</p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => setIsAIModalOpen(true)}
+                    className="px-4 py-2.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/15 text-xs font-semibold text-aura-coral flex items-center gap-2 transition-all shadow-glass"
+                  >
+                    <span>⚡</span> AI Mission Breakdown
+                  </button>
+                  <button 
+                    onClick={() => setView('new-project')}
+                    className="px-5 py-2.5 rounded-full bg-gradient-to-r from-aura-blue to-aura-cyan text-xs font-bold text-white shadow-glow-cyan hover:scale-[1.02] transition-all"
+                  >
+                    + Create Project
+                  </button>
+                </div>
+              </div>
+
+              {/* Active Projects Cards Grid */}
+              <div className="mt-8">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-base font-bold text-white uppercase tracking-wider text-xs text-slate-400">Active Missions</h2>
+                  <span className="text-xs text-slate-400">{db.projects.length} running</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {db.projects.map(proj => {
+                    const doneCount = proj.tasks.filter(t => t.column === 'done').length;
+                    const pct = proj.tasks.length ? Math.round((doneCount / proj.tasks.length) * 100) : 0;
+                    return (
+                      <div 
+                        key={proj.id}
+                        onClick={() => { setActiveProjectId(proj.id); setView('project'); setActiveProjectTab('overview'); }}
+                        className="group relative p-6 rounded-3xl bg-surface-glass border border-white/10 hover:border-aura-cyan/50 backdrop-blur-2xl transition-all cursor-pointer shadow-glass hover:-translate-y-1"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full bg-aura-blue/20 text-aura-sky border border-aura-blue/30 font-semibold">
+                              {proj.category}
+                            </span>
+                            <h3 className="text-xl font-bold text-white mt-2 group-hover:text-aura-cyan transition-colors">{proj.name}</h3>
+                            <p className="text-xs text-slate-300 mt-1 line-clamp-2">{proj.tagline}</p>
+                          </div>
+                          <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-mono font-semibold">
+                            {proj.status}
+                          </span>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="mt-6">
+                          <div className="flex justify-between text-xs mb-1.5 font-mono">
+                            <span className="text-slate-400">Target: {proj.targetDate}</span>
+                            <span className="text-aura-cyan font-bold">{pct}% Completed</span>
+                          </div>
+                          <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-aura-blue to-aura-cyan rounded-full transition-all duration-500" style={{ width: `${pct}%` }}></div>
+                          </div>
+                        </div>
+
+                        {/* Footer info: Members & Budget */}
+                        <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between text-xs">
+                          <div className="flex -space-x-2">
+                            {proj.members.map(m => (
+                              <div key={m.id} title={m.name} className="w-7 h-7 rounded-full bg-surface border border-white/20 flex items-center justify-center text-[10px] font-bold text-white">
+                                {m.avatar}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="text-slate-300 font-mono">
+                            Budget: <strong className="text-white">{formatCurrency(proj.totalBudget)}</strong>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2-Column Split: Assigned To Me & Recent Decisions */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-10">
+                
+                {/* Left 2 Cols: Assigned to me */}
+                <div className="lg:col-span-2 p-6 rounded-3xl bg-surface-glass border border-white/10 backdrop-blur-2xl">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-aura-coral"></span>
+                      My Action Items
+                    </h3>
+                    <span className="text-xs text-slate-400">Sorted by urgency</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {db.projects.flatMap(p => p.tasks.map(t => ({ ...t, projectName: p.name, projId: p.id })))
+                      .filter(t => t.assignee.toLowerCase().includes('jordan') || t.assignee.toLowerCase().includes('me'))
+                      .slice(0, 5)
+                      .map(task => (
+                        <div 
+                          key={task.id}
+                          onClick={() => { setActiveProjectId(task.projId); setView('project'); setActiveProjectTab('tasks'); }}
+                          className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/20 transition-all flex items-center justify-between cursor-pointer group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className={`w-2 h-2 rounded-full ${task.priority === 'urgent' ? 'bg-aura-coral animate-ping' : task.priority === 'high' ? 'bg-amber-400' : 'bg-aura-sky'}`}></span>
+                            <div>
+                              <div className="text-sm font-semibold text-slate-100 group-hover:text-aura-cyan transition-colors">{task.title}</div>
+                              <div className="text-xs text-slate-400 font-mono mt-0.5">{task.projectName} • Due {task.dueDate}</div>
+                            </div>
+                          </div>
+                          <span className={`text-[11px] font-mono uppercase px-2.5 py-0.5 rounded-full ${task.column === 'done' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/10 text-slate-300'}`}>
+                            {task.column}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Right 1 Col: Quick Actions & Intelligence Shortcut */}
+                <div className="space-y-6">
+                  <div className="p-6 rounded-3xl bg-gradient-to-br from-aura-blue/20 via-surface-elevated to-aura-coral/20 border border-white/15 backdrop-blur-2xl">
+                    <span className="text-xs font-mono uppercase tracking-widest text-aura-coral font-bold">CrewOS Intelligence</span>
+                    <h4 className="text-lg font-bold text-white mt-1">Autonomous Sprint Diagnostician</h4>
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                      Analyze active flight blocks, detect deadline slippage, or convert messy WhatsApp notes into signed action items.
+                    </p>
+                    <button 
+                      onClick={() => { setAiMode('health'); setIsAIModalOpen(true); }}
+                      className="w-full mt-4 py-2.5 rounded-xl bg-white text-midnight font-bold text-xs hover:bg-slate-200 transition-all shadow-md"
+                    >
+                      Run Health Check On Missions →
+                    </button>
+                  </div>
+
+                  {/* Recent Activity Log */}
+                  <div className="p-6 rounded-3xl bg-surface-glass border border-white/10 backdrop-blur-2xl">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Live Mission Activity</h3>
+                    <div className="space-y-3 text-xs">
+                      {project.activity.map(act => (
+                        <div key={act.id} className="pb-2.5 border-b border-white/5 last:border-0 last:pb-0">
+                          <span className="font-semibold text-aura-sky">{act.actor}</span>{' '}
+                          <span className="text-slate-400">{act.action}</span>{' '}
+                          <span className="text-slate-200 font-medium">"{act.target}"</span>
+                          <div className="text-[10px] text-slate-500 font-mono mt-0.5">{act.time}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </main>
+          )}
+
+
+          {/* ========================================================
+              VIEW 3: CREATE NEW PROJECT WIZARD
+              Interactive 6 templates, instant task & budget generation,
+              direct validation, and redirection to the workspace.
+             ======================================================== */}
+          {view === 'new-project' && (
+            <main className="max-w-4xl mx-auto px-4 sm:px-8 py-10 animate-fade-in">
+              <div className="mb-8">
+                <button 
+                  onClick={() => setView('dashboard')}
+                  className="text-xs text-slate-400 hover:text-white mb-2 flex items-center gap-1"
+                >
+                  ← Back to dashboard
+                </button>
+                <h1 className="text-3xl font-bold text-white">Assemble a New Mission</h1>
+                <p className="text-sm text-slate-400 mt-1">Configure your crew’s operating perimeter, budget, and starter template.</p>
+              </div>
+
+              <div className="p-8 rounded-3xl bg-surface-glass border border-white/15 backdrop-blur-2xl shadow-glass">
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const form = e.target;
+                  const newProj = {
+                    id: `proj-${Date.now()}`,
+                    name: form.projName.value || 'Untitled Mission',
+                    tagline: form.projTagline.value || 'Temporary squad execution.',
+                    category: form.projCategory.value,
+                    status: 'Active',
+                    startDate: new Date().toISOString().split('T')[0],
+                    targetDate: form.projTargetDate.value || '2026-12-31',
+                    totalBudget: Number(form.projBudget.value) || 100000,
+                    progress: 0,
+                    members: [
+                      { id: `m-${Date.now()}`, name: db.user.name, role: 'Owner', title: 'Mission Commander', avatar: db.user.avatar, email: db.user.email }
+                    ],
+                    tasks: [
+                      { id: `t-${Date.now()}-1`, title: 'Define mission parameters and scope signoff', column: 'todo', priority: 'urgent', assignee: db.user.name, dueDate: form.projTargetDate.value, checklist: [] },
+                      { id: `t-${Date.now()}-2`, title: 'Allocate operational initial expenses', column: 'todo', priority: 'high', assignee: db.user.name, dueDate: form.projTargetDate.value, checklist: [] }
+                    ],
+                    decisions: [],
+                    expenses: [],
+                    resources: [],
+                    activity: [{ id: `act-${Date.now()}`, actor: db.user.name, action: 'created mission workspace', target: form.projName.value, time: 'Just now' }],
+                    recap: null
+                  };
+                  updateDb({ ...db, projects: [newProj, ...db.projects] });
+                  setActiveProjectId(newProj.id);
+                  setView('project');
+                  setActiveProjectTab('overview');
+                  showToast(`Workspace initialized for ${newProj.name}`);
+                }} className="space-y-6">
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase text-slate-300 mb-2">Project Name</label>
+                    <input 
+                      name="projName" 
+                      required 
+                      defaultValue="Project Hyperion"
+                      className="w-full px-4 py-3 rounded-2xl bg-surface border border-white/15 text-white placeholder-slate-500 text-sm focus:border-aura-cyan outline-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase text-slate-300 mb-2">Mission Objective & Tagline</label>
+                    <input 
+                      name="projTagline" 
+                      required 
+                      defaultValue="Deploy decentralized compute node cluster for autonomous telemetry."
+                      className="w-full px-4 py-3 rounded-2xl bg-surface border border-white/15 text-white placeholder-slate-500 text-sm focus:border-aura-cyan outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold uppercase text-slate-300 mb-2">Category Blueprint</label>
+                      <select name="projCategory" className="w-full px-4 py-3 rounded-2xl bg-surface border border-white/15 text-white text-sm focus:border-aura-cyan outline-none">
+                        <option value="Startup Launch">Startup Launch</option>
+                        <option value="Hackathon">Hackathon Project</option>
+                        <option value="Event Planning">Event / Conference</option>
+                        <option value="Content Production">Content Production</option>
+                        <option value="Freelance Client">Freelance Client Sprint</option>
+                        <option value="Community Initiative">Community Initiative</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold uppercase text-slate-300 mb-2">Target Completion Date</label>
+                      <input 
+                        type="date" 
+                        name="projTargetDate" 
+                        defaultValue="2026-12-15"
+                        className="w-full px-4 py-3 rounded-2xl bg-surface border border-white/15 text-white text-sm focus:border-aura-cyan outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold uppercase text-slate-300 mb-2">Estimated Budget ({db.currency})</label>
+                      <input 
+                        type="number" 
+                        name="projBudget" 
+                        defaultValue="250000"
+                        className="w-full px-4 py-3 rounded-2xl bg-surface border border-white/15 text-white text-sm focus:border-aura-cyan outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-4 flex items-center justify-end gap-3 border-t border-white/10">
+                    <button 
+                      type="button" 
+                      onClick={() => setView('dashboard')}
+                      className="px-5 py-2.5 rounded-full text-xs font-semibold text-slate-400 hover:text-white"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit"
+                      className="px-7 py-3 rounded-full text-xs font-bold text-white bg-gradient-to-r from-aura-blue to-aura-cyan shadow-glow-cyan hover:scale-105 transition-all"
+                    >
+                      Launch Workspace ↗
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </main>
+          )}
+
+
+          {/* ========================================================
+              VIEW 4: COMPREHENSIVE PROJECT WORKSPACE
+              Tabs: Overview, Tasks, Decisions, Budget, Resources, Team, Recap
+             ======================================================== */}
+          {view === 'project' && project && (
+            <main className="max-w-7xl mx-auto px-4 sm:px-8 py-6 animate-fade-in">
+              
+              {/* Workspace Top Banner & Identity */}
+              <div className="p-6 sm:p-8 rounded-[2.5rem] bg-surface-glass border border-white/15 backdrop-blur-2xl shadow-glass mb-6">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <button 
+                        onClick={() => setView('dashboard')}
+                        className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-slate-400 hover:text-white"
+                      >
+                        ← All Missions
+                      </button>
+                      <span className="text-xs font-mono uppercase px-2.5 py-0.5 rounded-full bg-aura-blue/20 text-aura-sky border border-aura-blue/30 font-semibold">
+                        {project.category}
+                      </span>
+                      <span className="text-xs text-slate-400 font-mono">ID: {project.id}</span>
+                    </div>
+
+                    <h1 className="text-3xl sm:text-4xl font-bold text-white mt-2 flex items-center gap-3">
+                      {project.name}
+                    </h1>
+                    <p className="text-sm text-slate-300 mt-1 max-w-2xl">{project.tagline}</p>
+                  </div>
+
+                  {/* Right Header Stats & Actions */}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="px-4 py-2 rounded-2xl bg-white/[0.03] border border-white/10 text-xs font-mono text-slate-300">
+                      Target: <strong className="text-white">{project.targetDate}</strong>
+                    </div>
+
+                    {/* Member Avatars */}
+                    <div className="flex -space-x-2">
+                      {project.members.map(m => (
+                        <div key={m.id} title={`${m.name} (${m.role})`} className="w-8 h-8 rounded-full bg-surface-elevated border border-white/30 text-white flex items-center justify-center text-xs font-bold shadow-md">
+                          {m.avatar}
+                        </div>
+                      ))}
+                    </div>
+
+                    <button 
+                      onClick={() => setInviteModalOpen(true)}
+                      className="px-3.5 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-semibold text-white transition-all flex items-center gap-1.5"
+                    >
+                      + Invite Crew
+                    </button>
+
+                    <button 
+                      onClick={() => { setAiMode('plan'); setIsAIModalOpen(true); }}
+                      className="px-4 py-2 rounded-full bg-gradient-to-r from-aura-coral to-aura-sunset text-xs font-bold text-white shadow-glow-coral hover:scale-105 transition-all flex items-center gap-1.5"
+                    >
+                      ⚡ AI Sprint
+                    </button>
+                  </div>
+                </div>
+
+                {/* Tab Navigation Pill Bar */}
+                <div className="flex items-center gap-2 mt-8 pt-6 border-t border-white/10 overflow-x-auto pb-1 text-xs">
+                  {[
+                    { id: 'overview', label: 'Overview' },
+                    { id: 'tasks', label: `Tasks (${project.tasks.length})` },
+                    { id: 'decisions', label: `Decision Log (${project.decisions.length})` },
+                    { id: 'budget', label: `Budget (${formatCurrency(budgetMetrics.spent)})` },
+                    { id: 'resources', label: `Resources (${project.resources.length})` },
+                    { id: 'team', label: `Team (${project.members.length})` },
+                    { id: 'recap', label: 'Handover Recap' }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveProjectTab(tab.id)}
+                      className={`px-4 py-2 rounded-full whitespace-nowrap transition-all font-semibold ${
+                        activeProjectTab === tab.id
+                          ? 'bg-white text-midnight shadow-lg'
+                          : 'bg-white/[0.03] text-slate-400 hover:text-white border border-white/5'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ----------------------------------------------------
+                  TAB 1: PROJECT OVERVIEW
+                 ---------------------------------------------------- */}
+              {activeProjectTab === 'overview' && (
+                <div className="space-y-6">
+                  {/* Top 3 KPI Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div className="p-6 rounded-3xl bg-surface-glass border border-white/10 backdrop-blur-2xl">
+                      <span className="text-xs font-mono uppercase tracking-wider text-slate-400">Mission Progress</span>
+                      <div className="text-3xl font-bold text-white mt-2 font-display">{taskMetrics.progress}%</div>
+                      <div className="text-xs text-slate-400 mt-1">{taskMetrics.done} of {taskMetrics.total} tasks completed</div>
+                      <div className="w-full bg-white/10 h-1.5 rounded-full mt-4 overflow-hidden">
+                        <div className="bg-aura-cyan h-full rounded-full" style={{ width: `${taskMetrics.progress}%` }}></div>
+                      </div>
+                    </div>
+
+                    <div className="p-6 rounded-3xl bg-surface-glass border border-white/10 backdrop-blur-2xl">
+                      <span className="text-xs font-mono uppercase tracking-wider text-slate-400">Budget Spent</span>
+                      <div className="text-3xl font-bold text-aura-sky mt-2 font-display">{formatCurrency(budgetMetrics.spent)}</div>
+                      <div className="text-xs text-slate-400 mt-1">Remaining: {formatCurrency(budgetMetrics.remaining)} of {formatCurrency(project.totalBudget)}</div>
+                      <div className="w-full bg-white/10 h-1.5 rounded-full mt-4 overflow-hidden">
+                        <div className="bg-aura-blue h-full rounded-full" style={{ width: `${Math.min(100, budgetMetrics.percent)}%` }}></div>
+                      </div>
+                    </div>
+
+                    <div className="p-6 rounded-3xl bg-surface-glass border border-white/10 backdrop-blur-2xl">
+                      <span className="text-xs font-mono uppercase tracking-wider text-slate-400">Decisions Locked</span>
+                      <div className="text-3xl font-bold text-aura-coral mt-2 font-display">{project.decisions.length} Signed</div>
+                      <div className="text-xs text-slate-400 mt-1">{taskMetrics.urgent} urgent tasks pending signoff</div>
+                      <div className="mt-4 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span className="text-[11px] text-emerald-300 font-mono">Consensus active</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2-Column Split: Critical Path & Activity Feed */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 p-6 rounded-3xl bg-surface-glass border border-white/10 backdrop-blur-2xl">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-white">Critical Path Tasks</h3>
+                        <button onClick={() => setActiveProjectTab('tasks')} className="text-xs text-aura-cyan hover:underline">View Kanban Board →</button>
+                      </div>
+                      <div className="space-y-3">
+                        {project.tasks.slice(0, 4).map(t => (
+                          <div key={t.id} className="p-4 rounded-2xl bg-surface border border-white/10 flex items-center justify-between">
+                            <div>
+                              <div className="text-sm font-semibold text-white">{t.title}</div>
+                              <div className="text-xs text-slate-400 mt-1 font-mono">
+                                Owner: <span className="text-slate-200">{t.assignee}</span> • Due: {t.dueDate}
+                              </div>
+                            </div>
+                            <span className={`text-[10px] font-mono uppercase px-2 py-1 rounded-full ${t.column === 'done' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/10 text-slate-300'}`}>
+                              {t.column.replace('_', ' ')}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="p-6 rounded-3xl bg-surface-glass border border-white/10 backdrop-blur-2xl">
+                      <h3 className="text-sm font-bold uppercase tracking-wider text-white mb-4">Signed Decisions</h3>
+                      <div className="space-y-3">
+                        {project.decisions.map(d => (
+                          <div key={d.id} className="p-3.5 rounded-2xl bg-surface border border-white/10">
+                            <h4 className="text-xs font-bold text-white">{d.title}</h4>
+                            <p className="text-[11px] text-slate-300 mt-1 line-clamp-2">{d.rationale}</p>
+                            <div className="text-[10px] font-mono text-slate-500 mt-2">Approved by {d.approvedBy} on {d.date}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ----------------------------------------------------
+                  TAB 2: FUNCTIONAL TASK MANAGEMENT (KANBAN + LIST)
+                 ---------------------------------------------------- */}
+              {activeProjectTab === 'tasks' && (
+                <div className="space-y-6">
+                  {/* Task Toolbar: Search, Filters, Switch View, Add Task */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-surface-glass border border-white/10">
+                    <div className="flex flex-wrap items-center gap-3">
+                      {/* Search */}
+                      <input 
+                        type="text"
+                        placeholder="Search tasks or tags..."
+                        value={taskSearch}
+                        onChange={(e) => setTaskSearch(e.target.value)}
+                        className="px-3.5 py-1.5 rounded-full bg-surface border border-white/15 text-xs text-white placeholder-slate-500 outline-none focus:border-aura-cyan"
+                      />
+
+                      {/* Filter by Member */}
+                      <select 
+                        value={taskFilterAssignee}
+                        onChange={(e) => setTaskFilterAssignee(e.target.value)}
+                        aria-label="Filter by Member"
+                        className="px-3 py-1.5 rounded-full bg-surface border border-white/15 text-xs text-slate-300 outline-none"
+                      >
+                        <option value="all">All Members</option>
+                        {project.members.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
+                      </select>
+
+                      {/* View Switcher */}
+                      <div className="flex items-center rounded-full bg-surface border border-white/15 p-0.5 text-xs">
+                        <button 
+                          onClick={() => setTaskViewMode('kanban')}
+                          className={`px-3 py-1 rounded-full ${taskViewMode === 'kanban' ? 'bg-white text-midnight font-bold' : 'text-slate-400'}`}
+                        >
+                          Kanban
+                        </button>
+                        <button 
+                          onClick={() => setTaskViewMode('list')}
+                          className={`px-3 py-1 rounded-full ${taskViewMode === 'list' ? 'bg-white text-midnight font-bold' : 'text-slate-400'}`}
+                        >
+                          List
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Add Task Modal Trigger */}
+                    <button 
+                      onClick={() => {
+                        const title = prompt('Enter task title:');
+                        if (!title) return;
+                        const assignee = prompt('Assignee name:', project.members[0].name) || project.members[0].name;
+                        const newTask = {
+                          id: `t-${Date.now()}`,
+                          title,
+                          column: 'todo',
+                          priority: 'high',
+                          assignee,
+                          dueDate: '2026-11-15',
+                          checklist: []
+                        };
+                        const updatedProjects = db.projects.map(p => p.id === project.id ? { ...p, tasks: [newTask, ...p.tasks] } : p);
+                        updateDb({ ...db, projects: updatedProjects });
+                        showToast(`Created task: ${title}`);
+                      }}
+                      className="px-4 py-2 rounded-full bg-gradient-to-r from-aura-blue to-aura-cyan text-xs font-bold text-white shadow-glow-cyan"
+                    >
+                      + Add New Task
+                    </button>
+                  </div>
+
+                  {/* KANBAN BOARD VIEW */}
+                  {taskViewMode === 'kanban' && (
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 overflow-x-auto pb-4">
+                      {[
+                        { id: 'backlog', label: 'Backlog', color: 'border-slate-600' },
+                        { id: 'todo', label: 'To Do', color: 'border-blue-500' },
+                        { id: 'in_progress', label: 'In Progress', color: 'border-cyan-400' },
+                        { id: 'review', label: 'Review', color: 'border-amber-400' },
+                        { id: 'done', label: 'Done', color: 'border-emerald-400' }
+                      ].map(col => {
+                        const colTasks = project.tasks
+                          .filter(t => t.column === col.id)
+                          .filter(t => taskFilterAssignee === 'all' || t.assignee === taskFilterAssignee)
+                          .filter(t => !taskSearch || t.title.toLowerCase().includes(taskSearch.toLowerCase()));
+
+                        return (
+                          <div key={col.id} className="rounded-3xl bg-surface-glass border border-white/10 p-3.5 flex flex-col min-w-[240px]">
+                            {/* Column Header */}
+                            <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/10 px-1">
+                              <span className="text-xs font-bold uppercase tracking-wider text-slate-300">{col.label}</span>
+                              <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-white/10 text-white font-bold">{colTasks.length}</span>
+                            </div>
+
+                            {/* Task Cards Container */}
+                            <div className="space-y-3 flex-1">
+                              {colTasks.map(task => (
+                                <div 
+                                  key={task.id}
+                                  className="p-3.5 rounded-2xl bg-surface-elevated/90 border border-white/10 hover:border-aura-cyan/50 transition-all shadow-md group relative"
+                                >
+                                  <div className="flex items-start justify-between gap-2">
+                                    <h4 className="text-xs font-bold text-slate-100 group-hover:text-aura-cyan transition-colors leading-snug">{task.title}</h4>
+                                    <span className={`text-[9px] font-mono uppercase px-1.5 py-0.5 rounded ${
+                                      task.priority === 'urgent' ? 'bg-aura-coral/20 text-aura-coral font-bold' :
+                                      task.priority === 'high' ? 'bg-amber-500/20 text-amber-300' : 'bg-white/10 text-slate-400'
+                                    }`}>
+                                      {task.priority}
+                                    </span>
+                                  </div>
+
+                                  <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
+                                    <span className="text-slate-300 font-medium">{task.assignee}</span>
+                                    <span className="font-mono text-[10px]">{task.dueDate}</span>
+                                  </div>
+
+                                  {/* Fast Column Move Controls */}
+                                  <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between gap-1 text-[10px]">
+                                    <select 
+                                      value={task.column}
+                                      onChange={(e) => {
+                                        const newCol = e.target.value;
+                                        const updatedTasks = project.tasks.map(t => t.id === task.id ? { ...t, column: newCol } : t);
+                                        const updatedProjects = db.projects.map(p => p.id === project.id ? { ...p, tasks: updatedTasks } : p);
+                                        updateDb({ ...db, projects: updatedProjects });
+                                      }}
+                                      aria-label="Task Status"
+                                      className="w-full bg-midnight/80 text-aura-cyan rounded-lg px-2 py-1 border border-white/10 font-mono outline-none"
+                                    >
+                                      <option value="backlog">Move: Backlog</option>
+                                      <option value="todo">Move: To Do</option>
+                                      <option value="in_progress">Move: In Progress</option>
+                                      <option value="review">Move: Review</option>
+                                      <option value="done">Move: Done ✓</option>
+                                    </select>
+                                  </div>
+                                </div>
+                              ))}
+
+                              {colTasks.length === 0 && (
+                                <div className="p-6 text-center text-xs text-slate-600 border border-dashed border-white/10 rounded-2xl">
+                                  No items
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* LIST VIEW */}
+                  {taskViewMode === 'list' && (
+                    <div className="rounded-3xl bg-surface-glass border border-white/10 p-4 divide-y divide-white/10">
+                      {project.tasks.map(task => (
+                        <div key={task.id} className="py-3 px-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-white/[0.02] rounded-xl transition-colors">
+                          <div className="flex items-center gap-3">
+                            <span className={`w-3 h-3 rounded-full ${task.column === 'done' ? 'bg-emerald-400' : 'bg-aura-sky'}`}></span>
+                            <div>
+                              <div className={`text-sm font-semibold ${task.column === 'done' ? 'line-through text-slate-400' : 'text-white'}`}>{task.title}</div>
+                              <div className="text-xs text-slate-400 font-mono">Assigned to: {task.assignee} • Due: {task.dueDate}</div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 self-end sm:self-auto">
+                            <span className="text-xs font-mono uppercase px-2.5 py-1 rounded-full bg-white/10 text-slate-300">
+                              {task.column.replace('_', ' ')}
+                            </span>
+                            <button 
+                              onClick={() => {
+                                const updatedTasks = project.tasks.filter(t => t.id !== task.id);
+                                const updatedProjects = db.projects.map(p => p.id === project.id ? { ...p, tasks: updatedTasks } : p);
+                                updateDb({ ...db, projects: updatedProjects });
+                                showToast('Task deleted');
+                              }}
+                              className="text-xs text-rose-400 hover:text-rose-300 px-2 py-1"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ----------------------------------------------------
+                  TAB 3: LOCKED DECISION LOG
+                 ---------------------------------------------------- */}
+              {activeProjectTab === 'decisions' && (
+                <div className="space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-surface-glass border border-white/10">
+                    <div>
+                      <h2 className="text-xl font-bold text-white">Immutable Decision Log</h2>
+                      <p className="text-xs text-slate-400 mt-1">Never lose track of agreed architecture, design trade-offs, or commercial commitments.</p>
+                    </div>
+
+                    <button 
+                      onClick={() => {
+                        const title = prompt('Decision Title / Topic:');
+                        if (!title) return;
+                        const chosen = prompt('What was decided?') || '';
+                        const rationale = prompt('Why was this chosen over alternatives?') || '';
+                        const newDec = {
+                          id: `dec-${Date.now()}`,
+                          title,
+                          context: 'Recorded via live crew alignment session.',
+                          alternatives: ['Status Quo'],
+                          chosen,
+                          rationale,
+                          status: 'Approved',
+                          owner: db.user.name,
+                          approvedBy: db.user.name,
+                          date: new Date().toISOString().split('T')[0],
+                          history: [`Signed by ${db.user.name} on ${new Date().toLocaleDateString()}`]
+                        };
+                        const updatedProjects = db.projects.map(p => p.id === project.id ? { ...p, decisions: [newDec, ...p.decisions] } : p);
+                        updateDb({ ...db, projects: updatedProjects });
+                        showToast(`Decision registered: ${title}`);
+                      }}
+                      className="px-5 py-2.5 rounded-full bg-gradient-to-r from-aura-coral to-aura-sunset text-xs font-bold text-white shadow-glow-coral"
+                    >
+                      + Record New Decision
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {project.decisions.map(dec => (
+                      <div key={dec.id} className="p-6 rounded-3xl bg-surface-glass border border-white/10 backdrop-blur-2xl">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-4 mb-4">
+                          <div>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold uppercase">
+                              {dec.status}
+                            </span>
+                            <h3 className="text-lg font-bold text-white mt-1.5">{dec.title}</h3>
+                          </div>
+                          <div className="text-xs font-mono text-slate-400">
+                            Signed on {dec.date} by <strong className="text-slate-200">{dec.approvedBy}</strong>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                          <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                            <span className="font-semibold text-aura-sky uppercase tracking-wider text-[10px]">Chosen Resolution</span>
+                            <p className="text-slate-200 font-medium mt-1 leading-relaxed">{dec.chosen}</p>
+                          </div>
+                          <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                            <span className="font-semibold text-aura-coral uppercase tracking-wider text-[10px]">Core Rationale</span>
+                            <p className="text-slate-300 mt-1 leading-relaxed">{dec.rationale}</p>
+                          </div>
+                        </div>
+
+                        {dec.alternatives && dec.alternatives.length > 0 && (
+                          <div className="mt-4 text-xs text-slate-400">
+                            <span className="font-mono text-[10px] uppercase text-slate-500">Considered Alternatives:</span>{' '}
+                            {dec.alternatives.join(' • ')}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ----------------------------------------------------
+                  TAB 4: PRACTICAL PROJECT BUDGET MODULE
+                 ---------------------------------------------------- */}
+              {activeProjectTab === 'budget' && (
+                <div className="space-y-6">
+                  {/* Budget Top Metrics */}
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    <div className="p-5 rounded-3xl bg-surface-glass border border-white/10">
+                      <span className="text-[10px] font-mono uppercase text-slate-400">Total Allocated Budget</span>
+                      <div className="text-2xl font-bold text-white font-display mt-1">{formatCurrency(project.totalBudget)}</div>
+                    </div>
+                    <div className="p-5 rounded-3xl bg-surface-glass border border-white/10">
+                      <span className="text-[10px] font-mono uppercase text-slate-400">Actual Paid Out</span>
+                      <div className="text-2xl font-bold text-aura-cyan font-display mt-1">{formatCurrency(budgetMetrics.spent)}</div>
+                    </div>
+                    <div className="p-5 rounded-3xl bg-surface-glass border border-white/10">
+                      <span className="text-[10px] font-mono uppercase text-slate-400">Planned Commitments</span>
+                      <div className="text-2xl font-bold text-aura-coral font-display mt-1">{formatCurrency(budgetMetrics.planned)}</div>
+                    </div>
+                    <div className="p-5 rounded-3xl bg-surface-glass border border-white/10">
+                      <span className="text-[10px] font-mono uppercase text-slate-400">Remaining Cushion</span>
+                      <div className="text-2xl font-bold text-emerald-400 font-display mt-1">{formatCurrency(budgetMetrics.remaining)}</div>
+                    </div>
+                  </div>
+
+                  {/* Expense Table + Add Expense */}
+                  <div className="p-6 rounded-3xl bg-surface-glass border border-white/10">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                      <h3 className="text-base font-bold text-white uppercase tracking-wider text-xs">Expense Ledger</h3>
+                      <button 
+                        onClick={() => {
+                          const title = prompt('Expense description:');
+                          if (!title) return;
+                          const amount = Number(prompt('Amount in INR/Currency:')) || 0;
+                          const category = prompt('Category (Hardware, Legal, Operations, Compute, Marketing):') || 'Operations';
+                          const payer = prompt('Payer name:', db.user.name) || db.user.name;
+                          const newExp = {
+                            id: `exp-${Date.now()}`,
+                            title,
+                            category,
+                            amount,
+                            date: new Date().toISOString().split('T')[0],
+                            payer,
+                            status: 'Paid'
+                          };
+                          const updatedProjects = db.projects.map(p => p.id === project.id ? { ...p, expenses: [newExp, ...p.expenses] } : p);
+                          updateDb({ ...db, projects: updatedProjects });
+                          showToast(`Recorded expense: ${formatCurrency(amount)}`);
+                        }}
+                        className="px-4 py-2 rounded-full bg-gradient-to-r from-aura-blue to-aura-cyan text-xs font-bold text-white shadow-glow-cyan"
+                      >
+                        + Add Expense Record
+                      </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead>
+                          <tr className="border-b border-white/10 text-slate-400 font-mono uppercase text-[10px]">
+                            <th className="pb-3">Item Description</th>
+                            <th className="pb-3">Category</th>
+                            <th className="pb-3">Payer</th>
+                            <th className="pb-3">Date</th>
+                            <th className="pb-3">Status</th>
+                            <th className="pb-3 text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                          {project.expenses.map(exp => (
+                            <tr key={exp.id} className="hover:bg-white/[0.02]">
+                              <td className="py-3 font-semibold text-white">{exp.title}</td>
+                              <td className="py-3 font-mono text-slate-400">{exp.category}</td>
+                              <td className="py-3 text-slate-300">{exp.payer}</td>
+                              <td className="py-3 font-mono text-slate-500">{exp.date}</td>
+                              <td className="py-3">
+                                <span className={`px-2 py-0.5 rounded-full font-mono text-[10px] ${exp.status === 'Paid' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}>
+                                  {exp.status}
+                                </span>
+                              </td>
+                              <td className="py-3 text-right font-mono font-bold text-slate-100">{formatCurrency(exp.amount)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ----------------------------------------------------
+                  TAB 5: RESOURCES & ASSET REPOSITORY
+                 ---------------------------------------------------- */}
+              {activeProjectTab === 'resources' && (
+                <div className="space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-surface-glass border border-white/10">
+                    <div>
+                      <h2 className="text-xl font-bold text-white">Project Resource Library</h2>
+                      <p className="text-xs text-slate-400 mt-1">Single source of truth for Figma tokens, GitHub repos, contracts, and CAD files.</p>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        const title = prompt('Resource Title:');
+                        if (!title) return;
+                        const url = prompt('URL link (https://...):') || 'https://';
+                        const type = prompt('Type (Design, Code, Docs, CAD):') || 'Docs';
+                        const newRes = {
+                          id: `res-${Date.now()}`,
+                          title,
+                          url,
+                          type,
+                          author: db.user.name,
+                          date: new Date().toISOString().split('T')[0]
+                        };
+                        const updatedProjects = db.projects.map(p => p.id === project.id ? { ...p, resources: [newRes, ...p.resources] } : p);
+                        updateDb({ ...db, projects: updatedProjects });
+                        showToast(`Resource saved: ${title}`);
+                      }}
+                      className="px-4 py-2 rounded-full bg-gradient-to-r from-aura-blue to-aura-cyan text-xs font-bold text-white shadow-glow-cyan"
+                    >
+                      + Add Resource Link
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {project.resources.map(res => (
+                      <div key={res.id} className="p-5 rounded-2xl bg-surface-glass border border-white/10 flex items-start justify-between gap-4 hover:border-aura-cyan/40 transition-all">
+                        <div>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 text-aura-sky uppercase">{res.type}</span>
+                          <h4 className="text-sm font-bold text-white mt-2">{res.title}</h4>
+                          <a href={res.url} target="_blank" rel="noreferrer" className="text-xs text-aura-cyan hover:underline break-all mt-1 block">
+                            {res.url} ↗
+                          </a>
+                          <div className="text-[10px] text-slate-500 font-mono mt-2">Added by {res.author} on {res.date}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ----------------------------------------------------
+                  TAB 6: CREW ROSTER & ROLES
+                 ---------------------------------------------------- */}
+              {activeProjectTab === 'team' && (
+                <div className="space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-surface-glass border border-white/10">
+                    <div>
+                      <h2 className="text-xl font-bold text-white">Active Crew Roster</h2>
+                      <p className="text-xs text-slate-400 mt-1">Manage team roles and permission boundaries for this temporary mission.</p>
+                    </div>
+                    <button 
+                      onClick={() => setInviteModalOpen(true)}
+                      className="px-4 py-2 rounded-full bg-gradient-to-r from-aura-blue to-aura-cyan text-xs font-bold text-white shadow-glow-cyan"
+                    >
+                      + Add Teammate
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {project.members.map(member => (
+                      <div key={member.id} className="p-5 rounded-2xl bg-surface-glass border border-white/10 flex items-center justify-between">
+                        <div className="flex items-center gap-3.5">
+                          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-aura-blue to-aura-cyan flex items-center justify-center font-bold text-white text-sm">
+                            {member.avatar}
+                          </div>
+                          <div>
+                            <div className="text-sm font-bold text-white flex items-center gap-2">
+                              {member.name}
+                              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${member.role === 'Owner' ? 'bg-amber-500/20 text-amber-300' : 'bg-white/10 text-slate-300'}`}>
+                                {member.role}
+                              </span>
+                            </div>
+                            <div className="text-xs text-slate-400 mt-0.5">{member.title}</div>
+                            <div className="text-[11px] text-slate-500 font-mono">{member.email}</div>
+                          </div>
+                        </div>
+
+                        {member.role !== 'Owner' && (
+                          <button 
+                            onClick={() => {
+                              if (confirm(`Remove ${member.name} from the crew?`)) {
+                                const updatedMembers = project.members.filter(m => m.id !== member.id);
+                                const updatedProjects = db.projects.map(p => p.id === project.id ? { ...p, members: updatedMembers } : p);
+                                updateDb({ ...db, projects: updatedProjects });
+                                showToast(`Removed ${member.name}`);
+                              }
+                            }}
+                            className="text-xs text-rose-400 hover:text-rose-300 px-3 py-1.5 rounded-lg border border-rose-500/20"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ----------------------------------------------------
+                  TAB 7: PROJECT HANDOVER & RECAP DOSSIER
+                  Printable & exportable final handover dossier
+                 ---------------------------------------------------- */}
+              {activeProjectTab === 'recap' && (
+                <div className="space-y-6">
+                  <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-surface-glass border border-white/10">
+                    <div>
+                      <h2 className="text-xl font-bold text-white">Final Handover Dossier</h2>
+                      <p className="text-xs text-slate-400 mt-1">Generated snapshot of goals, signed decisions, final ledger, and key recommendations.</p>
+                    </div>
+                    <button 
+                      onClick={() => window.print()}
+                      className="px-5 py-2.5 rounded-full bg-white text-midnight font-bold text-xs hover:bg-slate-200 transition-all shadow-md flex items-center gap-1.5"
+                    >
+                      <span>🖨</span> Print / Save as PDF
+                    </button>
+                  </div>
+
+                  {/* Printable Dossier Card */}
+                  <div className="print-card p-8 sm:p-12 rounded-[2.5rem] bg-surface-elevated border border-white/15 text-slate-100 shadow-glass">
+                    <div className="border-b border-white/15 pb-6 mb-6">
+                      <div className="text-xs font-mono uppercase tracking-widest text-aura-cyan">Mission Handover Report • CrewOS</div>
+                      <h1 className="text-3xl font-bold text-white mt-1">{project.name}</h1>
+                      <p className="text-sm text-slate-300 mt-1 font-mono">Completed: {project.targetDate} • Velocity: {taskMetrics.progress}%</p>
+                    </div>
+
+                    <div className="space-y-8 text-sm">
+                      <div>
+                        <h3 className="text-xs font-mono uppercase tracking-wider text-aura-sky font-bold mb-2">Original Mission Goal</h3>
+                        <p className="text-slate-200 leading-relaxed bg-white/[0.02] p-4 rounded-xl border border-white/5">
+                          {project.recap ? project.recap.missionGoal : project.tagline}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <h3 className="text-xs font-mono uppercase tracking-wider text-emerald-400 font-bold mb-2">Completed Deliverables ({taskMetrics.done})</h3>
+                          <ul className="space-y-1.5 text-xs text-slate-300">
+                            {project.tasks.filter(t => t.column === 'done').map(t => (
+                              <li key={t.id} className="flex items-center gap-2">
+                                <span className="text-emerald-400 font-bold">✓</span> {t.title}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <div>
+                          <h3 className="text-xs font-mono uppercase tracking-wider text-amber-400 font-bold mb-2">Open / Carryover Items</h3>
+                          <ul className="space-y-1.5 text-xs text-slate-300">
+                            {project.tasks.filter(t => t.column !== 'done').map(t => (
+                              <li key={t.id} className="flex items-center gap-2">
+                                <span className="text-amber-400">•</span> {t.title} ({t.assignee})
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-xs font-mono uppercase tracking-wider text-aura-coral font-bold mb-2">Audited Technical Decisions</h3>
+                        <div className="space-y-2 text-xs">
+                          {project.decisions.map(d => (
+                            <div key={d.id} className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                              <span className="font-bold text-white">{d.title}:</span>{' '}
+                              <span className="text-slate-300">{d.rationale}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-xs font-mono uppercase tracking-wider text-aura-sky font-bold mb-2">Balance Sheet Reconciliation</h3>
+                        <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 font-mono text-xs flex justify-between">
+                          <span>Total Budget: {formatCurrency(project.totalBudget)}</span>
+                          <span>Actual Paid: {formatCurrency(budgetMetrics.spent)}</span>
+                          <span className="text-emerald-400">Net Surplus: {formatCurrency(budgetMetrics.remaining)}</span>
+                        </div>
+                      </div>
+
+                      {project.recap && (
+                        <div className="pt-4 border-t border-white/10 text-xs space-y-2">
+                          <h4 className="font-bold text-white uppercase text-[10px] font-mono">Lessons Learned & Successor Notes</h4>
+                          <p className="text-slate-300">{project.recap.lessonsLearned}</p>
+                          <p className="text-slate-400 italic mt-1">{project.recap.recommendations}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </main>
+          )}
+
+
+          {/* ========================================================
+              MODAL: CREW INVITE SYSTEM
+             ======================================================== */}
+          {inviteModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-midnight/80 backdrop-blur-xl animate-fade-in">
+              <div className="w-full max-w-md p-6 rounded-3xl bg-surface-elevated border border-white/20 shadow-glass">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-bold text-white">Invite Crew Members</h3>
+                  <button onClick={() => setInviteModalOpen(false)} className="text-slate-400 hover:text-white">✕</button>
+                </div>
+
+                <p className="text-xs text-slate-300 mb-4 leading-relaxed">
+                  Share this zero-install link. Anyone with this mission key can view and contribute to tasks according to assigned permissions.
+                </p>
+
+                <div className="p-3 rounded-2xl bg-midnight border border-white/15 flex items-center justify-between mb-4">
+                  <span className="text-xs font-mono text-aura-cyan truncate">https://crewos.local/join/{project.id}</span>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(`https://crewos.local/join/${project.id}`);
+                      setInviteCopied(true);
+                      setTimeout(() => setInviteCopied(false), 2000);
+                      showToast('Invitation link copied to clipboard!');
+                    }}
+                    className="ml-2 px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white whitespace-nowrap"
+                  >
+                    {inviteCopied ? 'Copied ✓' : 'Copy'}
+                  </button>
+                </div>
+
+                <div className="space-y-3 pt-3 border-t border-white/10">
+                  <label className="block text-xs font-semibold text-slate-300">Or send direct invitation:</label>
+                  <input 
+                    placeholder="teammate@organization.com"
+                    id="inviteEmailInput"
+                    className="w-full px-4 py-2.5 rounded-xl bg-midnight border border-white/15 text-xs text-white outline-none focus:border-aura-cyan"
+                  />
+                  <button 
+                    onClick={() => {
+                      const input = document.getElementById('inviteEmailInput');
+                      if (input && input.value) {
+                        showToast(`Invitation queued for ${input.value}`);
+                        input.value = '';
+                        setInviteModalOpen(false);
+                      }
+                    }}
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-aura-blue to-aura-cyan text-xs font-bold text-white"
+                  >
+                    Send Invitation Link
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+
+          {/* ========================================================
+              MODAL: CREWOS AI INTELLIGENCE ENGINE
+              1. Brief to Plan Decomposition
+              2. Meeting Note Action Item Extraction
+              3. Sprint Diagnostic Health Check
+             ======================================================== */}
+          {isAIModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-midnight/85 backdrop-blur-2xl animate-fade-in">
+              <div className="w-full max-w-2xl p-6 sm:p-8 rounded-[2.5rem] bg-surface-elevated border border-white/20 shadow-glow-cyan max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center pb-4 border-b border-white/10 mb-6">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-3 h-3 rounded-full bg-aura-coral animate-ping"></span>
+                    <h3 className="text-xl font-bold text-white">CrewOS AI Intelligence</h3>
+                  </div>
+                  <button onClick={() => setIsAIModalOpen(false)} className="text-slate-400 hover:text-white">✕</button>
+                </div>
+
+                {/* AI Mode Selector */}
+                <div className="flex items-center gap-2 mb-6 p-1 rounded-full bg-midnight border border-white/10 text-xs">
+                  <button 
+                    onClick={() => setAiMode('plan')} 
+                    className={`flex-1 py-1.5 rounded-full font-semibold transition-all ${aiMode === 'plan' ? 'bg-white text-midnight font-bold' : 'text-slate-400'}`}
+                  >
+                    Goal → Task Plan
+                  </button>
+                  <button 
+                    onClick={() => setAiMode('notes')} 
+                    className={`flex-1 py-1.5 rounded-full font-semibold transition-all ${aiMode === 'notes' ? 'bg-white text-midnight font-bold' : 'text-slate-400'}`}
+                  >
+                    Meeting Notes Extractor
+                  </button>
+                  <button 
+                    onClick={() => setAiMode('health')} 
+                    className={`flex-1 py-1.5 rounded-full font-semibold transition-all ${aiMode === 'health' ? 'bg-white text-midnight font-bold' : 'text-slate-400'}`}
+                  >
+                    Mission Health Scan
+                  </button>
+                </div>
+
+                {/* MODE 1: Plan Generator */}
+                {aiMode === 'plan' && (
+                  <div className="space-y-4">
+                    <p className="text-xs text-slate-300">
+                      Enter a brief mission goal. The assistant will propose structured phases, tasks, owners, and risk mitigation.
+                    </p>
+                    <textarea 
+                      id="aiBriefInput"
+                      rows="3"
+                      defaultValue="Launch autonomous drone corridor with live ground inspector dashboard in 4 weeks."
+                      className="w-full p-3.5 rounded-2xl bg-midnight border border-white/15 text-xs text-white outline-none focus:border-aura-cyan"
+                    ></textarea>
+
+                    <button 
+                      onClick={() => {
+                        const generatedTasks = [
+                          { id: `t-ai-${Date.now()}-1`, title: 'Simulate high-wind return-to-base geofence recovery', column: 'todo', priority: 'urgent', assignee: 'Ethan Vance', dueDate: '2026-11-12', checklist: [] },
+                          { id: `t-ai-${Date.now()}-2`, title: 'Prepare Municipal inspector compliance checklist', column: 'todo', priority: 'high', assignee: 'Samira Patel', dueDate: '2026-11-14', checklist: [] },
+                          { id: `t-ai-${Date.now()}-3`, title: 'Stress test multi-client WebGL telemetry rendering', column: 'todo', priority: 'medium', assignee: 'Maya Chen', dueDate: '2026-11-18', checklist: [] }
+                        ];
+                        const updatedProjects = db.projects.map(p => p.id === project.id ? { ...p, tasks: [...generatedTasks, ...p.tasks] } : p);
+                        updateDb({ ...db, projects: updatedProjects });
+                        setIsAIModalOpen(false);
+                        showToast('Approved & imported 3 AI-synthesized tasks into Kanban board!');
+                      }}
+                      className="w-full py-3 rounded-2xl bg-gradient-to-r from-aura-blue to-aura-cyan text-xs font-bold text-white shadow-glow-cyan"
+                    >
+                      Generate & Approve Sprint Tasks ↗
+                    </button>
+                  </div>
+                )}
+
+                {/* MODE 2: Meeting Notes Extractor */}
+                {aiMode === 'notes' && (
+                  <div className="space-y-4">
+                    <p className="text-xs text-slate-300">
+                      Paste messy chat transcripts or sprint notes. CrewOS will isolate agreed decisions from action items.
+                    </p>
+                    <textarea 
+                      id="aiNotesInput"
+                      rows="4"
+                      defaultValue="Jordan: We agreed to switch to 48V battery hubs. Maya will update the harness blueprints by Tuesday. Ethan: Agreed, let's keep budget under 35k."
+                      className="w-full p-3.5 rounded-2xl bg-midnight border border-white/15 text-xs text-white outline-none focus:border-aura-cyan"
+                    ></textarea>
+
+                    <button 
+                      onClick={() => {
+                        const newDec = {
+                          id: `dec-ai-${Date.now()}`,
+                          title: 'Switch to 48V standardized airframe battery hubs',
+                          context: 'Extracted from meeting dialogue.',
+                          alternatives: ['24V legacy packs'],
+                          chosen: '48V standardized airframe battery hubs',
+                          rationale: 'Reduces wiring weight while staying under ₹35k budget cap.',
+                          status: 'Approved',
+                          owner: 'Maya Chen',
+                          approvedBy: db.user.name,
+                          date: new Date().toISOString().split('T')[0],
+                          history: ['Parsed by CrewOS AI from live transcript']
+                        };
+                        const updatedProjects = db.projects.map(p => p.id === project.id ? { ...p, decisions: [newDec, ...p.decisions] } : p);
+                        updateDb({ ...db, projects: updatedProjects });
+                        setIsAIModalOpen(false);
+                        showToast('Extracted & approved decision: Switch to 48V battery hubs');
+                      }}
+                      className="w-full py-3 rounded-2xl bg-gradient-to-r from-aura-coral to-aura-sunset text-xs font-bold text-white shadow-glow-coral"
+                    >
+                      Extract & Approve Locked Decision ↗
+                    </button>
+                  </div>
+                )}
+
+                {/* MODE 3: Health Diagnostic */}
+                {aiMode === 'health' && (
+                  <div className="space-y-4 text-xs">
+                    <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30">
+                      <div className="font-bold text-emerald-300 uppercase font-mono text-[10px]">Pace Assessment</div>
+                      <p className="text-slate-200 mt-1">
+                        Current completion rate is <strong>{taskMetrics.progress}%</strong>. Target trajectory remains on schedule for {project.targetDate}.
+                      </p>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30">
+                      <div className="font-bold text-amber-300 uppercase font-mono text-[10px]">Budget Exposure</div>
+                      <p className="text-slate-200 mt-1">
+                        Spent {formatCurrency(budgetMetrics.spent)} of {formatCurrency(project.totalBudget)} ({budgetMetrics.percent}%). Buffer remains safe.
+                      </p>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-aura-blue/10 border border-aura-blue/30">
+                      <div className="font-bold text-aura-sky uppercase font-mono text-[10px]">Action Item Recommendation</div>
+                      <p className="text-slate-200 mt-1">
+                        Submit Civil Airspace waiver before Nov 02 to prevent ground test delays.
+                      </p>
+                    </div>
+
+                    <button 
+                      onClick={() => setIsAIModalOpen(false)}
+                      className="w-full py-2.5 rounded-xl bg-white text-midnight font-bold text-xs"
+                    >
+                      Close Health Diagnostics
+                    </button>
+                  </div>
+                )}
+
+              </div>
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    // Mount to DOM
+    ReactDOM.createRoot(document.getElementById('root')).render(<CrewOSApp />);
+  </script>
+</body>
+</html>
