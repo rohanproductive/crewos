@@ -103,6 +103,23 @@
 
   <script type="text/babel">
     const { useState, useEffect, useMemo, useRef } = React;
+      <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    // ==========================================
+    // PASTE YOUR SUPABASE KEYS HERE:
+    // ==========================================
+    const SUPABASE_URL = 'https://rcnnuvhwzfbntkkizaai.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjbm51dmh3emZibnRra2l6YWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzNzk1NDYsImV4cCI6MjEwODk1NTU0Nn0.4yTn-ZKE0cTd10MnjVtZnhtGqis2a7B65XQ0WCbbJdo';
+    
+    // Initialize the Supabase client
+    const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+    // --- SEED DATA & STORAGE MANAGER ---
+    const STORAGE_KEY = 'crewos_db_v2';
+
 
     // --- SEED DATA & STORAGE MANAGER ---
     const STORAGE_KEY = 'crewos_db_v2';
