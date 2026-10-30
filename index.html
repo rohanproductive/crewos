@@ -5,20 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CrewOS — The Operating System for Teams on a Mission</title>
   
-  <!-- Fonts: Newsreader & Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- React 18 & Babel for standalone execution -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Lucide Icons & Supabase Client SDK -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -96,7 +91,7 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useMemo, useRef } = React;
+    const { useState, useEffect, useMemo } = React;
 
     // --- SUPABASE CLIENT SETUP ---
     const SUPABASE_URL = 'https://rcnnuvhwzfbntkkizaai.supabase.co';
@@ -106,74 +101,14 @@
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
       : null;
 
-    const STORAGE_KEY = 'crewos_db_v5';
-
-    const INITIAL_DATA = {
-      user: {
-        id: 'usr-guest',
-        name: 'Jordan Rivera',
-        email: 'jordan@crewos.local',
-        role: 'Crew Director',
-        avatar: 'JR'
-      },
-      currency: 'INR',
-      currencySymbol: '₹',
-      projects: [
-        {
-          id: 'proj-atlas',
-          name: 'Launch Project Atlas',
-          tagline: 'Autonomous localized delivery drone network pilot.',
-          category: 'Startup Launch',
-          status: 'Active',
-          startDate: '2026-10-15',
-          targetDate: '2026-12-20',
-          totalBudget: 450000,
-          progress: 68,
-          members: [
-            { id: 'm-1', name: 'Jordan Rivera', role: 'Owner', title: 'Founder & Tech', avatar: 'JR', email: 'jordan@crewos.local' },
-            { id: 'm-2', name: 'Maya Chen', role: 'Admin', title: 'Lead Product Design', avatar: 'MC', email: 'maya@design.co' },
-            { id: 'm-3', name: 'Ethan Vance', role: 'Member', title: 'Avionics Firmware', avatar: 'EV', email: 'ethan@avionics.dev' }
-          ],
-          tasks: [
-            { id: 't-1', title: 'Design FAA Part 107 safety test protocols', column: 'done', priority: 'high', assignee: 'Maya Chen', dueDate: '2026-10-24' },
-            { id: 't-2', title: 'Calibrate optical flow sensors on Mark-IV payload', column: 'done', priority: 'urgent', assignee: 'Ethan Vance', dueDate: '2026-10-28' },
-            { id: 't-3', title: 'Finalize brand guidelines & landing page assets', column: 'in_progress', priority: 'medium', assignee: 'Maya Chen', dueDate: '2026-11-04' },
-            { id: 't-4', title: 'Pilot flight permit submission to Civil Aviation Dept', column: 'review', priority: 'urgent', assignee: 'Jordan Rivera', dueDate: '2026-11-02' }
-          ],
-          decisions: [
-            {
-              id: 'dec-1',
-              title: 'Adopt Cellular LTE fallback alongside 915MHz LoRa telemetry',
-              context: 'In dense suburban test sites, LoRa radio packets experienced line-of-sight drops.',
-              chosen: 'Dual-redundant eSIM multi-carrier telemetry with auto-handover to LoRa as cold fallback.',
-              rationale: 'LTE provides 50ms roundtrip latency for live compliance video.',
-              status: 'Approved',
-              owner: 'Ethan Vance',
-              approvedBy: 'Jordan Rivera',
-              date: '2026-10-22'
-            }
-          ],
-          expenses: [
-            { id: 'exp-1', title: 'Mark-IV Carbon Fiber Airframe Spares', category: 'Hardware', amount: 84000, date: '2026-10-18', payer: 'Ethan Vance', status: 'Paid' },
-            { id: 'exp-2', title: 'Civil Drone Third-Party Liability Insurance', category: 'Legal & Compliance', amount: 125000, date: '2026-10-20', payer: 'Jordan Rivera', status: 'Paid' }
-          ],
-          resources: [
-            { id: 'res-1', title: 'Figma System & Telemetry HUD Tokens', url: 'https://figma.com/@crewos/atlas', type: 'Design', author: 'Maya Chen', date: '2026-10-17' }
-          ],
-          activity: [
-            { id: 'act-1', actor: 'Ethan Vance', action: 'completed task', target: 'Calibrate optical flow sensors', time: '4 hours ago' }
-          ],
-          recap: null
-        }
-      ]
-    };
+    const STORAGE_KEY = 'crewos_db_v6';
 
     function loadDB() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) return JSON.parse(raw);
       } catch (e) {}
-      return INITIAL_DATA;
+      return { currency: 'INR', currencySymbol: '₹', projects: [] };
     }
 
     function saveDB(data) {
@@ -185,11 +120,13 @@
     function CrewOSApp() {
       const [db, setDb] = useState(loadDB);
       const [view, setView] = useState('landing');
-      const [activeProjectId, setActiveProjectId] = useState('proj-atlas');
+      const [activeProjectId, setActiveProjectId] = useState(null);
       const [activeProjectTab, setActiveProjectTab] = useState('overview');
       const [isAIModalOpen, setIsAIModalOpen] = useState(false);
       const [inviteModalOpen, setInviteModalOpen] = useState(false);
-      const [inviteCopied, setInviteCopied] = useState(false);
+      const [joinModalOpen, setJoinModalOpen] = useState(false);
+      const [joinCodeInput, setJoinCodeInput] = useState('');
+      const [copiedCode, setCopiedCode] = useState(false);
       const [toast, setToast] = useState(null);
 
       // Auth states
@@ -211,31 +148,12 @@
         saveDB(newDb);
       };
 
-      // Lucide icon refresh
+      // Lucide icon dynamic reload
       useEffect(() => {
         if (window.lucide) {
           window.lucide.createIcons();
         }
       });
-
-      // --- ZERO-FRICTION INVITE LINK DETECTION ---
-      // Detects #join=proj-id or ?join=proj-id so anyone can view workspaces without Vercel logins
-      useEffect(() => {
-        const hash = window.location.hash || '';
-        const search = window.location.search || '';
-        const target = hash.includes('join=') ? hash : search;
-        
-        if (target.includes('join=')) {
-          const match = target.match(/join=([^&]+)/);
-          if (match && match[1]) {
-            const joinedProjId = decodeURIComponent(match[1]);
-            setActiveProjectId(joinedProjId);
-            setView('project');
-            setActiveProjectTab('tasks');
-            showToast('Connected to shared crew workspace ✓');
-          }
-        }
-      }, []);
 
       // --- SUPABASE SESSION SYNC ---
       useEffect(() => {
@@ -244,47 +162,30 @@
         supabase.auth.getSession().then(({ data: { session } }) => {
           if (session?.user) {
             setAuthUser(session.user);
-            const userEmail = session.user.email || 'user@crewos.local';
-            const userName = session.user.user_metadata?.full_name || userEmail.split('@')[0];
-            setDb(prev => ({
-              ...prev,
-              user: {
-                id: session.user.id,
-                email: userEmail,
-                name: userName,
-                role: 'Mission Commander',
-                avatar: userName.substring(0, 2).toUpperCase()
-              }
-            }));
+            if (view === 'landing') setView('dashboard');
+          } else {
+            setAuthUser(null);
+            setView('landing');
           }
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
           if (session?.user) {
             setAuthUser(session.user);
-            const userEmail = session.user.email || 'user@crewos.local';
-            const userName = session.user.user_metadata?.full_name || userEmail.split('@')[0];
-            setDb(prev => ({
-              ...prev,
-              user: {
-                id: session.user.id,
-                email: userEmail,
-                name: userName,
-                role: 'Mission Commander',
-                avatar: userName.substring(0, 2).toUpperCase()
-              }
-            }));
+            setAuthModalOpen(false);
+            if (view === 'landing') setView('dashboard');
           } else {
             setAuthUser(null);
+            setView('landing');
           }
         });
 
         return () => subscription.unsubscribe();
-      }, []);
+      }, [view]);
 
-      // --- FETCH DATA FROM SUPABASE CLUSTER ---
+      // --- FETCH DATA FROM SUPABASE CLUSTER (LOGGED IN USERS ONLY) ---
       useEffect(() => {
-        if (!supabase) return;
+        if (!supabase || !authUser) return;
 
         async function fetchRemoteData() {
           try {
@@ -293,11 +194,11 @@
               .select('*, tasks (*), decisions (*), expenses (*)');
 
             if (error) {
-              console.warn('Supabase notice:', error.message);
+              console.warn('Supabase fetch notice:', error.message);
               return;
             }
 
-            if (remoteProjects && remoteProjects.length > 0) {
+            if (remoteProjects) {
               const formatted = remoteProjects.map(p => ({
                 id: p.id,
                 name: p.name,
@@ -309,7 +210,14 @@
                 totalBudget: Number(p.total_budget || 0),
                 progress: p.progress || 0,
                 members: [
-                  { id: 'm-101', name: db.user.name, role: 'Owner', title: 'Director', avatar: db.user.avatar, email: db.user.email }
+                  { 
+                    id: authUser.id, 
+                    name: authUser.user_metadata?.full_name || authUser.email.split('@')[0], 
+                    role: 'Owner', 
+                    title: 'Mission Commander', 
+                    avatar: (authUser.email.substring(0, 2)).toUpperCase(), 
+                    email: authUser.email 
+                  }
                 ],
                 tasks: (p.tasks || []).map(t => ({
                   id: t.id,
@@ -330,7 +238,9 @@
               }));
 
               setDb(prev => ({ ...prev, projects: formatted }));
-              showToast('Synced with Supabase Cloud ✓');
+              if (formatted.length > 0 && !activeProjectId) {
+                setActiveProjectId(formatted[0].id);
+              }
             }
           } catch (err) {
             console.error('Supabase fetch failed:', err);
@@ -355,16 +265,24 @@
               options: { data: { full_name: authEmail.split('@')[0] } }
             });
             if (error) throw error;
-            showToast('Account created successfully!');
-            setAuthModalOpen(false);
+            if (data?.session) {
+              setAuthUser(data.session.user);
+              setAuthModalOpen(false);
+              setView('dashboard');
+              showToast('Account created & logged in.');
+            } else {
+              showToast('Please check your email, or turn off "Confirm email" in Supabase.');
+            }
           } else {
             const { data, error } = await supabase.auth.signInWithPassword({
               email: authEmail,
               password: authPassword
             });
             if (error) throw error;
-            showToast(`Welcome back, ${data.user.email.split('@')[0]}!`);
+            setAuthUser(data.user);
             setAuthModalOpen(false);
+            setView('dashboard');
+            showToast(`Welcome back, ${data.user.email.split('@')[0]}!`);
           }
         } catch (err) {
           setAuthError(err.message || 'Authentication failed');
@@ -377,11 +295,23 @@
         if (!supabase) return;
         await supabase.auth.signOut();
         setAuthUser(null);
+        setView('landing');
         showToast('Signed out successfully');
       };
 
+      // Strict guest block for any restricted view
+      const protectAction = (targetView) => {
+        if (!authUser) {
+          setAuthError('');
+          setAuthMode('signin');
+          setAuthModalOpen(true);
+        } else {
+          setView(targetView);
+        }
+      };
+
       const project = useMemo(() => {
-        return db.projects.find(p => p.id === activeProjectId) || db.projects[0];
+        return db.projects.find(p => p.id === activeProjectId) || db.projects[0] || null;
       }, [db.projects, activeProjectId]);
 
       const budgetMetrics = useMemo(() => {
@@ -403,10 +333,25 @@
 
       const formatCurrency = (amt) => `${db.currencySymbol || '₹'}${Number(amt).toLocaleString()}`;
 
-      // Build clean share link
-      const getInviteUrl = () => {
-        const origin = window.location.origin;
-        return `${origin}/#join=${project.id}`;
+      // Mission code generator from ID
+      const getMissionCode = (projId) => {
+        if (!projId) return 'CREW-01';
+        return projId.replace('proj-', '').substring(0, 8).toUpperCase();
+      };
+
+      const handleJoinWithCode = (e) => {
+        e.preventDefault();
+        const code = joinCodeInput.trim().toLowerCase();
+        const found = db.projects.find(p => p.id.toLowerCase().includes(code) || getMissionCode(p.id).toLowerCase() === code);
+        if (found) {
+          setActiveProjectId(found.id);
+          setView('project');
+          setJoinModalOpen(false);
+          setJoinCodeInput('');
+          showToast(`Entered mission workspace: ${found.name}`);
+        } else {
+          showToast('Mission code not found. Create a mission or verify code.');
+        }
       };
 
       return (
@@ -424,7 +369,7 @@
           <header className="sticky top-0 z-40 w-full px-4 sm:px-8 py-3.5 backdrop-blur-2xl bg-midnight/65 border-b border-white/[0.08] transition-all">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
               
-              <div onClick={() => setView('landing')} className="flex items-center gap-3.5 cursor-pointer group">
+              <div onClick={() => setView(authUser ? 'dashboard' : 'landing')} className="flex items-center gap-3.5 cursor-pointer group">
                 <div className="relative w-9 h-9 rounded-2xl bg-gradient-to-tr from-aura-blue via-aura-cyan to-aura-coral p-[1px] shadow-glow-cyan transition-transform group-hover:scale-105">
                   <div className="w-full h-full bg-midnight rounded-2xl flex items-center justify-center font-bold text-aura-sky">⌘</div>
                 </div>
@@ -435,19 +380,23 @@
                 </div>
               </div>
 
-              <nav className="hidden md:flex items-center gap-1 px-4 py-1.5 rounded-full bg-surface-glass border border-white/[0.1] backdrop-blur-xl shadow-glass text-sm">
-                <button onClick={() => setView('landing')} className={`px-3.5 py-1 rounded-full transition-all ${view === 'landing' ? 'bg-white/10 text-white font-medium' : 'text-slate-400 hover:text-white'}`}>Home</button>
-                <button onClick={() => setView('dashboard')} className={`px-3.5 py-1 rounded-full transition-all ${view === 'dashboard' ? 'bg-white/10 text-white font-medium' : 'text-slate-400 hover:text-white'}`}>Dashboard</button>
-                <button onClick={() => { setView('project'); setActiveProjectTab('tasks'); }} className={`px-3.5 py-1 rounded-full transition-all ${view === 'project' ? 'bg-white/10 text-white font-medium' : 'text-slate-400 hover:text-white'}`}>Workspace</button>
-                <button onClick={() => setIsAIModalOpen(true)} className="px-3.5 py-1 rounded-full text-aura-coral hover:text-white flex items-center gap-1.5">⚡ AI Planner</button>
-              </nav>
+              {/* Navigation: Strictly hidden for unauthenticated guests */}
+              {authUser ? (
+                <nav className="hidden md:flex items-center gap-1 px-4 py-1.5 rounded-full bg-surface-glass border border-white/[0.1] backdrop-blur-xl shadow-glass text-sm">
+                  <button onClick={() => setView('dashboard')} className={`px-3.5 py-1 rounded-full transition-all ${view === 'dashboard' ? 'bg-white/10 text-white font-medium' : 'text-slate-400 hover:text-white'}`}>Dashboard</button>
+                  <button onClick={() => { if (!project) { setView('new-project'); } else { setView('project'); setActiveProjectTab('tasks'); } }} className={`px-3.5 py-1 rounded-full transition-all ${view === 'project' ? 'bg-white/10 text-white font-medium' : 'text-slate-400 hover:text-white'}`}>Workspace</button>
+                  <button onClick={() => setIsAIModalOpen(true)} className="px-3.5 py-1 rounded-full text-aura-coral hover:text-white flex items-center gap-1.5">⚡ AI Planner</button>
+                  <button onClick={() => setJoinModalOpen(true)} className="px-3 py-1 rounded-full text-aura-sky hover:text-white text-xs font-mono"># Join Code</button>
+                </nav>
+              ) : null}
 
+              {/* Right User Bar / Auth Trigger */}
               <div className="flex items-center gap-3">
                 {authUser ? (
                   <div className="flex items-center gap-2.5">
                     <button onClick={() => setView('new-project')} className="px-3.5 py-1.5 rounded-full bg-aura-blue/20 hover:bg-aura-blue/30 border border-aura-blue/40 text-xs font-semibold text-aura-sky transition-all flex items-center gap-1.5">+ New Mission</button>
                     <div title={`Logged in as ${authUser.email}`} className="w-8 h-8 rounded-full bg-gradient-to-tr from-aura-coral to-aura-cyan flex items-center justify-center font-bold text-xs text-midnight shadow-glow-coral">
-                      {db.user.avatar}
+                      {authUser.email.substring(0, 2).toUpperCase()}
                     </div>
                     <button onClick={handleSignOut} className="text-xs text-slate-400 hover:text-white px-2 py-1">Sign Out</button>
                   </div>
@@ -461,12 +410,11 @@
             </div>
           </header>
 
-          {/* VIEW: ORIGINAL MARKETING HERO */}
+          {/* VIEW: MARKETING HERO (SHOWN TO GUESTS) */}
           {view === 'landing' && (
             <main className="relative">
               <section className="relative min-h-[92vh] flex flex-col justify-center items-center px-4 sm:px-6 pt-12 pb-24 aurora-bloom overflow-hidden text-center">
                 
-                {/* Background Waves */}
                 <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
                   <svg className="w-full h-full max-w-6xl" viewBox="0 0 1000 600" fill="none">
                     <path d="M 100 300 Q 250 150, 500 320 T 900 280" stroke="url(#hero-grad-cyan)" strokeWidth="1.5" strokeDasharray="4 6" />
@@ -502,50 +450,65 @@
                   </p>
 
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mb-8">
-                    <button onClick={() => setView('dashboard')} className="w-full sm:w-auto px-8 py-3.5 rounded-full font-semibold text-white bg-gradient-to-r from-aura-blue via-aura-cyan to-aura-coral shadow-glow-cyan hover:scale-[1.02] transition-all">Start a crew workspace ↗</button>
-                    <button onClick={() => { setActiveProjectId('proj-atlas'); setView('project'); }} className="w-full sm:w-auto px-8 py-3.5 rounded-full font-medium text-slate-200 bg-white/[0.04] border border-white/15 backdrop-blur-xl hover:bg-white/[0.08] transition-all">Explore live demo</button>
+                    <button onClick={() => protectAction('dashboard')} className="w-full sm:w-auto px-8 py-3.5 rounded-full font-semibold text-white bg-gradient-to-r from-aura-blue via-aura-cyan to-aura-coral shadow-glow-cyan hover:scale-[1.02] transition-all">Start a crew workspace ↗</button>
+                    <button onClick={() => { setAuthError(''); setAuthMode('signin'); setAuthModalOpen(true); }} className="w-full sm:w-auto px-8 py-3.5 rounded-full font-medium text-slate-200 bg-white/[0.04] border border-white/15 backdrop-blur-xl hover:bg-white/[0.08] transition-all">Sign In with Account</button>
                   </div>
 
                   <p className="text-xs tracking-widest uppercase text-slate-400 font-mono">
-                    From first idea to final handover. No credit card required.
+                    From first idea to final handover. Authentication required for squad access.
                   </p>
                 </div>
               </section>
             </main>
           )}
 
-          {/* VIEW: MAIN DASHBOARD */}
-          {view === 'dashboard' && (
+          {/* VIEW: MAIN DASHBOARD (AUTHENTICATED ONLY) */}
+          {view === 'dashboard' && authUser && (
             <main className="max-w-7xl mx-auto px-4 sm:px-8 py-8 animate-fade-in">
               <div className="flex flex-col md:flex-row md:items-center justify-between pb-8 border-b border-white/10 gap-4">
                 <div>
                   <h1 className="text-3xl sm:text-4xl font-bold text-white">Mission Command</h1>
-                  <p className="text-sm text-slate-400 mt-1">Logged in as {db.user.name}</p>
+                  <p className="text-sm text-slate-400 mt-1">Logged in as {authUser.email}</p>
                 </div>
                 <div className="flex items-center gap-3">
+                  <button onClick={() => setJoinModalOpen(true)} className="px-4 py-2.5 rounded-full bg-white/[0.04] border border-white/15 text-xs font-semibold text-aura-sky"># Enter Mission Code</button>
                   <button onClick={() => setIsAIModalOpen(true)} className="px-4 py-2.5 rounded-full bg-white/[0.04] border border-white/15 text-xs font-semibold text-aura-coral flex items-center gap-2">⚡ AI Breakdown</button>
                   <button onClick={() => setView('new-project')} className="px-5 py-2.5 rounded-full bg-gradient-to-r from-aura-blue to-aura-cyan text-xs font-bold text-white shadow-glow-cyan">+ Create Project</button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-                {db.projects.map(proj => (
-                  <div key={proj.id} onClick={() => { setActiveProjectId(proj.id); setView('project'); }} className="p-6 rounded-3xl bg-surface-glass border border-white/10 hover:border-aura-cyan/50 backdrop-blur-2xl transition-all cursor-pointer shadow-glass">
-                    <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full bg-aura-blue/20 text-aura-sky font-semibold">{proj.category}</span>
-                    <h3 className="text-xl font-bold text-white mt-2">{proj.name}</h3>
-                    <p className="text-xs text-slate-300 mt-1">{proj.tagline}</p>
-                    <div className="mt-6 flex justify-between text-xs font-mono text-slate-400">
-                      <span>Target: {proj.targetDate}</span>
-                      <span className="text-aura-cyan font-bold">{proj.tasks.length} tasks</span>
-                    </div>
+              {db.projects.length === 0 ? (
+                <div className="p-12 text-center rounded-3xl bg-surface-glass border border-dashed border-white/15 mt-8">
+                  <h3 className="text-lg font-bold text-white mb-2">No missions yet</h3>
+                  <p className="text-xs text-slate-400 mb-6">Create your squad workspace or join a teammate's mission with their code.</p>
+                  <div className="flex justify-center gap-3">
+                    <button onClick={() => setView('new-project')} className="px-5 py-2.5 rounded-full bg-gradient-to-r from-aura-blue to-aura-cyan text-xs font-bold text-white shadow-glow-cyan">Create First Mission</button>
+                    <button onClick={() => setJoinModalOpen(true)} className="px-5 py-2.5 rounded-full bg-white/10 text-xs font-semibold text-white">Enter Mission Code</button>
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                  {db.projects.map(proj => (
+                    <div key={proj.id} onClick={() => { setActiveProjectId(proj.id); setView('project'); }} className="p-6 rounded-3xl bg-surface-glass border border-white/10 hover:border-aura-cyan/50 backdrop-blur-2xl transition-all cursor-pointer shadow-glass">
+                      <div className="flex justify-between items-start">
+                        <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full bg-aura-blue/20 text-aura-sky font-semibold">{proj.category}</span>
+                        <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-slate-400">Code: {getMissionCode(proj.id)}</span>
+                      </div>
+                      <h3 className="text-xl font-bold text-white mt-2">{proj.name}</h3>
+                      <p className="text-xs text-slate-300 mt-1">{proj.tagline}</p>
+                      <div className="mt-6 flex justify-between text-xs font-mono text-slate-400">
+                        <span>Target: {proj.targetDate}</span>
+                        <span className="text-aura-cyan font-bold">{proj.tasks.length} tasks</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </main>
           )}
 
           {/* VIEW: CREATE PROJECT WIZARD */}
-          {view === 'new-project' && (
+          {view === 'new-project' && authUser && (
             <main className="max-w-2xl mx-auto px-4 py-10 animate-fade-in">
               <h1 className="text-3xl font-bold text-white mb-6">New Mission Workspace</h1>
               <form onSubmit={async (e) => {
@@ -561,7 +524,7 @@
                   targetDate: form.projTargetDate.value,
                   totalBudget: Number(form.projBudget.value) || 100000,
                   progress: 0,
-                  members: [{ id: 'm-1', name: db.user.name, role: 'Owner', title: 'Lead', avatar: db.user.avatar, email: db.user.email }],
+                  members: [{ id: authUser.id, name: authUser.email.split('@')[0], role: 'Owner', title: 'Lead', avatar: (authUser.email.substring(0, 2)).toUpperCase(), email: authUser.email }],
                   tasks: [],
                   decisions: [],
                   expenses: [],
@@ -590,11 +553,11 @@
               }} className="space-y-4 p-8 rounded-3xl bg-surface-glass border border-white/10 shadow-glass">
                 <div>
                   <label className="text-xs uppercase text-slate-400 block mb-1">Project Name</label>
-                  <input name="projName" required defaultValue="Project Odyssey" className="w-full px-4 py-2.5 rounded-xl bg-midnight border border-white/15 text-white outline-none focus:border-aura-cyan" />
+                  <input name="projName" required placeholder="Project Atlas" className="w-full px-4 py-2.5 rounded-xl bg-midnight border border-white/15 text-white outline-none focus:border-aura-cyan" />
                 </div>
                 <div>
                   <label className="text-xs uppercase text-slate-400 block mb-1">Mission Objective</label>
-                  <input name="projTagline" required defaultValue="Autonomous squad execution." className="w-full px-4 py-2.5 rounded-xl bg-midnight border border-white/15 text-white outline-none focus:border-aura-cyan" />
+                  <input name="projTagline" required placeholder="Rapid sprint squad execution." className="w-full px-4 py-2.5 rounded-xl bg-midnight border border-white/15 text-white outline-none focus:border-aura-cyan" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -621,17 +584,20 @@
           )}
 
           {/* VIEW: PROJECT WORKSPACE */}
-          {view === 'project' && project && (
+          {view === 'project' && authUser && project && (
             <main className="max-w-7xl mx-auto px-4 sm:px-8 py-6 animate-fade-in">
               <div className="p-6 rounded-[2.5rem] bg-surface-glass border border-white/15 backdrop-blur-2xl mb-6 shadow-glass">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div>
-                    <span className="text-xs font-mono uppercase px-2.5 py-0.5 rounded-full bg-aura-blue/20 text-aura-sky font-semibold">{project.category}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono uppercase px-2.5 py-0.5 rounded-full bg-aura-blue/20 text-aura-sky font-semibold">{project.category}</span>
+                      <span className="text-xs font-mono text-slate-400 px-2 py-0.5 rounded bg-white/5 border border-white/10">Code: {getMissionCode(project.id)}</span>
+                    </div>
                     <h1 className="text-3xl font-bold text-white mt-2">{project.name}</h1>
                     <p className="text-xs text-slate-300 mt-1">{project.tagline}</p>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => setInviteModalOpen(true)} className="px-4 py-2 rounded-full bg-white/10 text-xs font-semibold text-white">+ Invite Crew</button>
+                    <button onClick={() => setInviteModalOpen(true)} className="px-4 py-2 rounded-full bg-white/10 text-xs font-semibold text-white">+ Mission Code</button>
                     <button onClick={() => setIsAIModalOpen(true)} className="px-4 py-2 rounded-full bg-gradient-to-r from-aura-coral to-aura-sunset text-xs font-bold text-white shadow-glow-coral">⚡ AI Plan</button>
                   </div>
                 </div>
@@ -681,7 +647,7 @@
                         title,
                         column: 'todo',
                         priority: 'high',
-                        assignee: db.user.name,
+                        assignee: authUser.email.split('@')[0],
                         dueDate: '2026-11-20',
                         checklist: []
                       };
@@ -729,6 +695,11 @@
                                 </div>
                               </div>
                             ))}
+                            {colTasks.length === 0 && (
+                              <div className="p-6 text-center text-xs text-slate-600 border border-dashed border-white/10 rounded-2xl">
+                                Empty
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -754,8 +725,8 @@
                         chosen,
                         rationale,
                         status: 'Approved',
-                        owner: db.user.name,
-                        approvedBy: db.user.name,
+                        owner: authUser.email.split('@')[0],
+                        approvedBy: authUser.email.split('@')[0],
                         date: new Date().toISOString().split('T')[0]
                       };
                       updateDb({ ...db, projects: db.projects.map(p => p.id === project.id ? { ...p, decisions: [newDec, ...p.decisions] } : p) });
@@ -811,7 +782,7 @@
                         category: 'Operations',
                         amount,
                         date: new Date().toISOString().split('T')[0],
-                        payer: db.user.name,
+                        payer: authUser.email.split('@')[0],
                         status: 'Paid'
                       };
                       updateDb({ ...db, projects: db.projects.map(p => p.id === project.id ? { ...p, expenses: [newExp, ...p.expenses] } : p) });
@@ -856,14 +827,14 @@
             </main>
           )}
 
-          {/* AUTH MODAL (DIRECT EMAIL & PASSWORD ONLY) */}
+          {/* AUTH MODAL (DIRECT EMAIL & PASSWORD) */}
           {authModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-midnight/80 backdrop-blur-2xl animate-fade-in">
               <div className="w-full max-w-sm p-6 sm:p-8 rounded-[2rem] bg-surface-elevated border border-white/20 shadow-glow-cyan">
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <h3 className="text-xl font-bold text-white">{authMode === 'signin' ? 'Sign In' : 'Create Account'}</h3>
-                    <p className="text-xs text-slate-400 mt-1">{authMode === 'signin' ? 'Sign in to access your missions' : 'Join CrewOS to launch your squad'}</p>
+                    <p className="text-xs text-slate-400 mt-1">{authMode === 'signin' ? 'Access your mission workspace' : 'Create squad mission account'}</p>
                   </div>
                   <button onClick={() => setAuthModalOpen(false)} className="text-slate-400 hover:text-white">✕</button>
                 </div>
@@ -911,12 +882,13 @@
                 </div>
                 <textarea rows="3" defaultValue="Deploy beta client onboarding portal and safety compliance checks in 3 weeks." className="w-full p-3 rounded-xl bg-midnight border border-white/15 text-xs text-white mb-4 outline-none focus:border-aura-cyan"></textarea>
                 <button onClick={async () => {
+                  if (!project) return;
                   const aiTask = {
                     id: `t-ai-${Date.now()}`,
                     title: 'Conduct automated safety compliance check audit',
                     column: 'todo',
                     priority: 'urgent',
-                    assignee: db.user.name,
+                    assignee: authUser ? authUser.email.split('@')[0] : 'Lead',
                     dueDate: '2026-11-25',
                     checklist: []
                   };
@@ -941,28 +913,53 @@
             </div>
           )}
 
-          {/* INVITE MODAL (INSTANT ZERO-ACCESS SHARING LINK) */}
-          {inviteModalOpen && (
+          {/* INVITE CODE MODAL */}
+          {inviteModalOpen && project && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-midnight/80 backdrop-blur-xl">
-              <div className="w-full max-w-md p-6 rounded-3xl bg-surface-elevated border border-white/20 shadow-glass">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-lg font-bold text-white">Share Workspace Link</h3>
+              <div className="w-full max-w-sm p-6 rounded-3xl bg-surface-elevated border border-white/20 shadow-glass text-center">
+                <div className="flex justify-between items-center mb-3 text-left">
+                  <h3 className="text-base font-bold text-white">Mission Crew Code</h3>
                   <button onClick={() => setInviteModalOpen(false)} className="text-slate-400">✕</button>
                 </div>
-                <p className="text-xs text-slate-300 mb-4 leading-relaxed">
-                  Anyone with this link can view and collaborate on this mission immediately without requesting access or signing into Vercel.
+                <p className="text-xs text-slate-300 mb-4 text-left">
+                  Teammates can use this mission code from their dashboard to join this workspace:
                 </p>
-                <div className="p-3 rounded-2xl bg-midnight border border-white/15 flex items-center justify-between mb-2">
-                  <span className="text-xs font-mono text-aura-cyan truncate select-all">{getInviteUrl()}</span>
+                <div className="p-4 rounded-2xl bg-midnight border border-white/15 flex items-center justify-between mb-4">
+                  <span className="font-mono text-xl font-bold tracking-widest text-aura-cyan">{getMissionCode(project.id)}</span>
                   <button onClick={() => {
-                    navigator.clipboard.writeText(getInviteUrl());
-                    setInviteCopied(true);
-                    setTimeout(() => setInviteCopied(false), 2000);
-                    showToast('Invite link copied!');
-                  }} className="ml-2 px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all whitespace-nowrap">
-                    {inviteCopied ? 'Copied ✓' : 'Copy'}
+                    navigator.clipboard.writeText(getMissionCode(project.id));
+                    setCopiedCode(true);
+                    setTimeout(() => setCopiedCode(false), 2000);
+                    showToast('Mission code copied!');
+                  }} className="px-3 py-1.5 rounded-xl bg-white/10 text-xs font-semibold text-white">
+                    {copiedCode ? 'Copied ✓' : 'Copy'}
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* JOIN MISSION MODAL */}
+          {joinModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-midnight/80 backdrop-blur-xl">
+              <div className="w-full max-w-sm p-6 rounded-3xl bg-surface-elevated border border-white/20 shadow-glass">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-base font-bold text-white">Enter Mission Code</h3>
+                  <button onClick={() => setJoinModalOpen(false)} className="text-slate-400">✕</button>
+                </div>
+                <form onSubmit={handleJoinWithCode} className="space-y-4">
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="e.g. ATLAS-9X" 
+                    value={joinCodeInput} 
+                    onChange={e => setJoinCodeInput(e.target.value)} 
+                    className="w-full px-4 py-2.5 rounded-xl bg-midnight border border-white/15 text-sm text-white font-mono uppercase tracking-wider outline-none focus:border-aura-cyan"
+                  />
+                  <button type="submit" className="w-full py-2.5 rounded-xl bg-gradient-to-r from-aura-blue to-aura-cyan text-xs font-bold text-white">
+                    Join Workspace →
+                  </button>
+                </form>
               </div>
             </div>
           )}
